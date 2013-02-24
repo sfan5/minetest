@@ -2080,9 +2080,9 @@ void the_game(
 				if(rec_cache_setting) {
 					rec_frame_save = rec_frame - 1;
 					if(rec_cacheraw_setting) {
-						rec_dosave = true;
-					} else {
 						rec_dorender = true;
+					} else {
+						rec_dosave = true;
 					}
 				}
 				rec_frame = 0;
