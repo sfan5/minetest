@@ -65,6 +65,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "event_manager.h"
 #include <iomanip>
 #include <list>
+#include <GL/gl.h>
+#include <math.h>
 #include "util/directiontables.h"
 #include "util/pointedthing.h"
 #include "drawscene.h"
@@ -262,6 +264,92 @@ public:
 
 	Client *m_client;
 };
+
+/*
+	RenderThread
+*/
+
+#define CLIP8(X) ( (X) > 255 ? 255 : (X) < 0 ? 0 : X)
+
+// RGB -> YUV
+#define RGB2Y(R, G, B) CLIP8(( (  66 * (R) + 129 * (G) +  25 * (B) + 128) >> 8) +  16)
+#define RGB2U(R, G, B) CLIP8(( ( -38 * (R) -  74 * (G) + 112 * (B) + 128) >> 8) + 128)
+#define RGB2V(R, G, B) CLIP8(( ( 112 * (R) -  94 * (G) -  18 * (B) + 128) >> 8) + 128)
+
+void * EncodeThread::Thread()
+{
+	ThreadStarted();
+
+	log_register_thread("EncodeThread");
+
+	DSTACK(__FUNCTION_NAME);
+
+	BEGIN_DEBUG_EXCEPTION_HANDLER
+
+	m_counter = 0;
+	x264_picture_t pic_in;
+	x264_picture_alloc(&pic_in, X264_CSP_I420, m_ss.Width, m_ss.Height);
+
+	while(!StopRequested())
+	{
+		if(m_quene->size() == 0)
+		{
+			sleep_ms(10);
+			continue;
+		}
+
+		// Convert to YUV
+		unsigned char *img = m_quene->front();
+		m_quene->pop_front();
+		unsigned char *outy = (unsigned char*) malloc(m_ss.Width * m_ss.Height);
+		unsigned char *outu = (unsigned char*) malloc(m_ss.Width * m_ss.Height);
+		unsigned char *outv = (unsigned char*) malloc(m_ss.Width * m_ss.Height);
+		for(u16 x = 0; x < m_ss.Width; x++) {
+			for(u16 y = 0; y < m_ss.Height; y++) {
+				u32 i = x*3 + y*3*m_ss.Width;
+				u32 j = x + y*m_ss.Width;
+				unsigned char r = img[i];
+				unsigned char g = img[i+1];
+				unsigned char b = img[i+2];
+				outy[j] = RGB2Y(r, g, b);
+				outu[j] = RGB2U(r, g, b);
+				outv[j] = RGB2V(r, g, b);
+			}
+		}
+		free(img);
+
+		// Encode
+		x264_nal_t* nals;
+		int i_nals;
+		x264_picture_t pic_out;
+		pic_in.img.plane[0] = outy;
+		pic_in.img.plane[1] = outu;
+		pic_in.img.plane[2] = outv;
+		pic_in.img.i_stride[0] = m_ss.Width;
+		pic_in.img.i_stride[1] = m_ss.Width;
+		pic_in.img.i_stride[2] = m_ss.Width;
+		pic_in.img.i_plane = 3;
+		int frame_size = x264_encoder_encode(m_encoder, &nals, &i_nals, &pic_in, &pic_out);
+		if(frame_size > 0)
+		{
+			fwrite((char*) nals[0].p_payload, frame_size, 1, m_dest);
+		}
+		free(outy);
+		free(outu);
+		free(outv);
+
+		m_counter++;
+	}
+
+	//x264_picture_clean(&pic_in);
+	fflush(m_dest);
+	fclose(m_dest);
+
+
+	END_DEBUG_EXCEPTION_HANDLER(errorstream)
+
+	return NULL;
+}
 
 /*
 	Check if a node is pointable
@@ -1577,6 +1665,13 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		g_touchscreengui->init(tsrc,porting::getDisplayDensity());
 #endif
 
+	bool recording = false;
+	u8 rec_frameskip_counter = 0;
+	u32 rec_frame = 0;
+	u8 rec_frameskip_setting = g_settings->getU16("video_frameskip");
+	std::deque<unsigned char*> rec_cache_raw;
+	EncodeThread rec_encodethread((std::deque<unsigned char*>*) NULL, NULL, NULL, irr::core::dimension2d<u32>(0, 0));
+
 	/*
 		Some statistics are collected in these
 	*/
@@ -1898,6 +1993,36 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 			current_formspec->getAndroidUIInput();
 #endif
 
+		if(recording) {
+			if(rec_frameskip_counter == rec_frameskip_setting) {
+				rec_frameskip_counter = 0;
+				std::wstringstream rstatus;
+				rstatus<<"Recording... FPS:"<<floor(1./dtime)<<" Frame:"<<rec_frame;
+				if(rec_encodethread.IsRunning())
+				{
+					rstatus<<" Encoding... Frame "<<rec_encodethread.m_counter<<"/"<<rec_frame<<" ";
+				}
+				guitext2->setText(rstatus.str().c_str());
+				unsigned char *temp = (unsigned char*) malloc(3 * screensize.X * screensize.Y);
+				glReadPixels(0, 0, screensize.X, screensize.Y, GL_RGB, GL_UNSIGNED_BYTE, temp);
+				rec_cache_raw.push_back(temp);
+				rec_frame++;
+			} else {
+				rec_frameskip_counter++;
+			}
+		}
+
+		if(rec_encodethread.IsRunning() && !recording)
+		{
+			std::wstringstream rstatus;
+			rstatus<<"Encoding... Frame "<<rec_encodethread.m_counter<<"/"<<rec_frame<<" ";
+			if(rec_encodethread.m_counter == rec_frame && !recording) // Check if EncodeThread is done
+			{
+				rec_encodethread.Stop();
+			}
+			guitext2->setText(rstatus.str().c_str());
+		}
+
 		// Increase timer for doubleclick of "jump"
 		if(g_settings->getBool("doubletap_jump") && jump_timer <= 0.2)
 			jump_timer += dtime;
@@ -2152,7 +2277,63 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 					+ itos(range_new));
 			statustext_time = 0;
 		}
+		else if(input->wasKeyDown(getKeySetting("keymap_videorec")))
+		{
+			if(recording)
+			{
+				recording = false;
+				std::wstringstream sstr;
+				sstr<<"Recording stopped!";
+				statustext = sstr.str();
+				statustext_time = 0;
+			}
+			else
+			{
 
+				irr::c8 filename[256];
+				snprintf(filename, 256, "%s" DIR_DELIM "video_%u.h264",
+						 g_settings->get("video_path").c_str(),
+						 device->getTimer()->getRealTime());
+				FILE *f = fopen(filename, "wb");
+				if(f)
+				{
+					recording = true;
+					x264_t *enc;
+					x264_param_t param;
+					x264_param_default_preset(&param, g_settings->get("video_preset").c_str(), g_settings->get("video_tune").c_str());
+					param.i_threads = g_settings->getU16("video_threads");
+					param.i_width = screensize.X;
+					param.i_height = screensize.Y;
+					param.i_fps_num = 30;
+					param.i_fps_den = 1;
+					param.i_keyint_max = 30;
+					param.b_intra_refresh = 1;
+					param.rc.i_rc_method = X264_RC_CRF;
+					param.rc.f_rf_constant = g_settings->getU16("video_crf");
+					param.rc.f_rf_constant_max = g_settings->getU16("video_crf_max");
+					param.b_annexb = 1;
+					param.b_repeat_headers = 1;
+
+					x264_param_apply_profile(&param, g_settings->get("video_profile").c_str());
+					enc = x264_encoder_open(&param);
+					x264_encoder_parameters(enc, &param);
+
+					rec_encodethread = EncodeThread(&rec_cache_raw, f, enc, screensize);
+					rec_encodethread.Start();
+					std::wstringstream sstr;
+					sstr<<"Recording started";
+					statustext = sstr.str();
+					statustext_time = 0;
+					rec_frame = 0;
+				} else {
+					std::wstringstream sstr;
+					sstr<<"Failed to open file!";
+					statustext = sstr.str();
+					statustext_time = 0;
+				}
+			}
+		}
+		
 		// Reset jump_timer
 		if(!input->isKeyDown(getKeySetting("keymap_jump")) && reset_jump_timer)
 		{
@@ -3259,6 +3440,10 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 			);
 			guitext2->setRelativePosition(rect);
 		}
+		else if(recording || rec_encodethread.IsRunning())
+		{
+			guitext2->setVisible(true);
+		}
 		else
 		{
 			guitext2->setVisible(false);
@@ -3336,7 +3521,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 
 			// Update gui element size and position
 			s32 chat_y = 5+(text_height+5);
-			if(show_debug)
+			if(show_debug || recording || rec_encodethread.IsRunning())
 				chat_y += (text_height+5);
 			core::rect<s32> rect(
 				10,

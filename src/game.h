@@ -22,8 +22,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "irrlichttypes_extrabloated.h"
 #include <string>
+#include <deque>
 #include "keycode.h"
 #include <list>
+#include "jthread/jmutex.h"
+#include "porting.h"
+#include "util/container.h"
+#include "util/thread.h"
+extern "C" {
+	#include <x264.h>
+}
 
 class KeyList : protected std::list<KeyPress>
 {
@@ -141,6 +149,31 @@ void the_game(
 	const SubgameSpec &gamespec, // Used for local game
 	bool simple_singleplayer_mode
 );
+
+class EncodeThread : public JThread
+{
+public:
+
+	EncodeThread(std::deque<unsigned char*>* quene, FILE* dest, x264_t *enc, irr::core::dimension2d<u32> ss):
+		m_quene(quene),
+		m_dest(dest),
+		m_encoder(enc),
+		m_ss(ss)
+	{
+	}
+
+	void * Thread();
+
+	std::deque<unsigned char*>* m_quene;
+
+	FILE *m_dest;
+
+	x264_t* m_encoder;
+
+	irr::core::dimension2d<u32> m_ss;
+
+	int m_counter;
+};
 
 #endif
 

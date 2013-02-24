@@ -49,6 +49,7 @@
 #keymap_freemove = KEY_KEY_K
 #keymap_fastmove = KEY_KEY_J
 #keymap_screenshot = KEY_F12
+#keymap_videorec = KEY_F8
 # If true, keymap_special1 instead of keymap_sneak is used for climbing down and descending
 #aux1_descends = false
 # Doubletaping the jump key toogles fly mode
@@ -234,6 +235,22 @@
 #font_shadow_alpha = 128
 #mono_font_path = fonts/liberationmono.ttf
 #mono_font_size = 13
+
+#Path to Video Directory
+#video_path = .
+#Skip number of frames between capturing a frame
+#video_frameskip = 0
+#Constant Rate Factor [= quality] (0 best/lossless - 63 worst)
+#video_crf = 25
+#video_crf_max = 30
+#Preset (avilable: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow)
+#video_preset = faster
+#Tune (avilable: film, animation, grain, stillimage, psnr, ssim, fastdecode, zerolatency)
+#video_tune = zerolatency
+#Profile (avilable: baseline, main, high, high10, high422, high444)
+#video_profile = high
+#Amount of threads to use for encoding
+#video_threads = 2
 
 # This font will be used for certain languages
 #fallback_font_path = fonts/DroidSansFallbackFull.ttf

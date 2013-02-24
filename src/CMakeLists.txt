@@ -315,6 +315,16 @@ if(ENABLE_REDIS)
 	endif(REDIS_LIBRARY AND REDIS_INCLUDE_DIR)
 endif(ENABLE_REDIS)
 
+find_library(X264_LIBRARY x264)
+find_path(X264_INCLUDE_DIR x264.h)
+message (STATUS "x264 library: ${X264_LIBRARY}")
+message (STATUS "x264 headers: ${X264_INCLUDE_DIR}")
+if(X264_LIBRARY AND X264_INCLUDE_DIR)
+	include_directories(${X264_INCLUDE_DIR})
+else(X264_LIBRARY AND X264_INCLUDE_DIR)
+	message(ERROR "x264 not found!")
+endif(X264_LIBRARY AND X264_INCLUDE_DIR)
+
 configure_file(
 	"${PROJECT_SOURCE_DIR}/cmake_config.h.in"
 	"${PROJECT_BINARY_DIR}/cmake_config.h"
@@ -501,6 +511,10 @@ if(USE_CURL)
 		${CURL_INCLUDE_DIR}
 	)
 endif(USE_CURL)
+
+if(WIN32)
+	set(CLIENT_PLATFORM_LIBS "-lopengl32")
+endif()
 
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin")
 
