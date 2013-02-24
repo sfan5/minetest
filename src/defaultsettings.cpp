@@ -47,6 +47,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("keymap_fastmove", "KEY_KEY_J");
 	settings->setDefault("keymap_noclip", "KEY_KEY_H");
 	settings->setDefault("keymap_screenshot", "KEY_F12");
+	settings->setDefault("keymap_videorec", "KEY_F8");
 	settings->setDefault("keymap_toggle_hud", "KEY_F1");
 	settings->setDefault("keymap_toggle_chat", "KEY_F2");
 	settings->setDefault("keymap_toggle_force_fog_off", "KEY_F3");
@@ -105,6 +106,10 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("invert_mouse", "false");
 	settings->setDefault("enable_clouds", "true");
 	settings->setDefault("screenshot_path", ".");
+	settings->setDefault("video_path", "videos");
+	settings->setDefault("video_frameskip", "0");
+	settings->setDefault("video_cacheimg", "true");
+	settings->setDefault("video_cacheimgraw", "true");
 	settings->setDefault("view_bobbing_amount", "1.0");
 	settings->setDefault("fall_bobbing_amount", "0.0");
 	settings->setDefault("enable_3d_clouds", "true");

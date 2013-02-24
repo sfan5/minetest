@@ -67,6 +67,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "event_manager.h"
 #include <iomanip>
 #include <list>
+#include <GL/gl.h> // Needed for Raw Image-Cache
+#include <math.h> // Needed for Rendering
 #include "util/directiontables.h"
 
 /*
@@ -1370,7 +1372,24 @@ void the_game(
 	guitext_profiler->setBackgroundColor(video::SColor(120,0,0,0));
 	guitext_profiler->setVisible(false);
 	guitext_profiler->setWordWrap(true);
-	
+		
+	//MineMovie Variables
+	bool recording = false; //Recording?
+	u8 rec_frameskip_counter = 0;
+	u16 rec_frame = 0;
+	u16 rec_frame_save = 0;
+	bool rec_dosave = false; //Saving?
+	u16 rec_dosave_counter = 0;
+	bool rec_dorender = false; //Rendering?
+	u16 rec_dorender_counter = 0;
+	irr::core::dimension2d<u32> rec_ss;
+	// Settings
+	u16 rec_frameskip_cache = g_settings->getU16("video_frameskip");
+	bool rec_cache_setting = g_settings->getBool("video_cacheimg");
+	bool rec_cacheraw_setting = g_settings->getBool("video_cacheimgraw");
+	// Buffers
+	std::vector<unsigned char*> rec_cache_raw;
+	std::vector<irr::video::IImage*> rec_cache;
 	/*
 		Some statistics are collected in these
 	*/
@@ -1694,7 +1713,88 @@ void the_game(
 
 		// Input handler step() (used by the random input generator)
 		input->step(dtime);
-
+				
+		if(recording) {
+			if(rec_frameskip_counter == rec_frameskip_cache) {
+				rec_frameskip_counter = 0;
+				std::wstringstream rstatus;
+				rstatus<<"Recording... FPS:"<<1./dtime<<" Frame:"<<rec_frame;
+				guitext2->setText(rstatus.str().c_str());
+				if(rec_cacheraw_setting) {
+					unsigned char *temp = (unsigned char*) malloc(3 * (rec_ss.Width+1) * (rec_ss.Height + 1) + 3);
+					glReadPixels(0, 0, screensize.X, screensize.Y, GL_RGB, GL_UNSIGNED_BYTE, temp);
+					rec_cache_raw.push_back(temp);
+				} else {
+					irr::video::IImage* const image = driver->createScreenShot(); 
+					if(image) {
+						if(!rec_cache_setting) {
+							irr::c8 filename[256]; 
+							snprintf(filename, 256, "%s" DIR_DELIM "v%04d.png", 
+								g_settings->get("video_path").c_str(),
+								rec_frame); 
+							if (!driver->writeImageToFile(image, filename)) {
+								infostream<<"Failed to save to '"<<filename<<"'"<<std::endl;
+							}
+							image->drop();
+						} else {
+							rec_cache.push_back(image);
+						} 
+					}
+				}
+				rec_frame++;
+			} else {
+				rec_frameskip_counter++;
+			}
+		}
+				
+		if(rec_dosave) {
+			irr::video::IImage* const image = rec_cache[rec_dosave_counter];
+			irr::c8 filename[256]; 
+			snprintf(filename, 256, "%s" DIR_DELIM "v%04d.png", g_settings->get("video_path").c_str(),rec_dosave_counter); 
+			if(driver->writeImageToFile(image, filename)) {
+				std::wstringstream sstatus;
+				sstatus<<"Saving... Frame "<<rec_dosave_counter<<"/"<<rec_frame_save;
+				guitext2->setText(sstatus.str().c_str());
+				image->drop();
+			} else {
+				infostream<<"Failed to save to '"<<filename<<"'"<<std::endl;
+			}
+			if(rec_dosave_counter >= rec_frame_save) {
+				rec_dosave_counter = 0;
+				rec_dosave = false;
+				rec_cache.clear();
+			} else {
+				rec_dosave_counter++;
+			}
+		}
+		
+		if(rec_dorender) {
+			std::wstringstream sstatus;
+			sstatus<<"Rendering... Frame "<<rec_dorender_counter<<"/"<<rec_frame_save;
+			guitext2->setText(sstatus.str().c_str());
+			unsigned char *img;
+			img = rec_cache_raw[rec_dorender_counter];
+			irr::video::IImage* image = device->getVideoDriver()->createImage(irr::video::ECF_A8R8G8B8, rec_ss);
+			for(u32 i = 0;i < rec_ss.Width * rec_ss.Height;i++) {
+				unsigned char r = img[i*3-3];
+				unsigned char g = img[i*3-2];
+				unsigned char b = img[i*3-1];
+				u32 y = rec_ss.Height - floor(i/rec_ss.Width);
+				u32 x = i - (floor(i/rec_ss.Width)*rec_ss.Width);
+				image->setPixel(x,y,irr::video::SColor(255,r,g,b),false);
+			}
+			free(img);
+			rec_cache.push_back(image);
+			if(rec_dorender_counter >= rec_frame_save) {
+				rec_dorender_counter = 0;
+				rec_dorender = false;
+				rec_dosave = true;
+				rec_cache_raw.clear();
+			} else {
+				rec_dorender_counter++;
+			}
+		}
+				
 		// Increase timer for doubleclick of "jump"
 		if(g_settings->getBool("doubletap_jump") && jump_timer <= 0.2)
 			jump_timer += dtime;
@@ -1969,6 +2069,31 @@ void the_game(
 					"Minimum viewing range changed to "
 					+ itos(range_new));
 			statustext_time = 0;
+		}
+		else if(input->wasKeyDown(getKeySetting("keymap_videorec"))) {
+			if(recording) {
+				recording = false;
+				std::wstringstream sstr;
+				sstr<<"Recording stopped!";
+				statustext = sstr.str();
+				statustext_time = 0;
+				if(rec_cache_setting) {
+					rec_frame_save = rec_frame - 1;
+					if(rec_cacheraw_setting) {
+						rec_dosave = true;
+					} else {
+						rec_dorender = true;
+					}
+				}
+				rec_frame = 0;
+			} else {
+				recording = true;
+				std::wstringstream sstr;
+				sstr<<"Recording started!";
+				statustext = sstr.str();
+				statustext_time = 0;
+				rec_ss = driver->getScreenSize();
+			}
 		}
 		
 		// Reset jump_timer
@@ -3014,6 +3139,18 @@ void the_game(
 			guitext2->setText(narrow_to_wide(os.str()).c_str());
 			guitext2->setVisible(true);
 		}
+				else if(recording)
+				{
+					guitext2->setVisible(true);
+				}
+				else if(rec_dosave)
+				{
+					guitext2->setVisible(true);
+				}
+				else if(rec_dorender)
+				{
+					guitext2->setVisible(true);
+				}
 		else
 		{
 			guitext2->setVisible(false);
@@ -3091,7 +3228,7 @@ void the_game(
 
 			// Update gui element size and position
 			s32 chat_y = 5+(text_height+5);
-			if(show_debug)
+			if(show_debug || recording || rec_dorender || rec_dosave)
 				chat_y += (text_height+5);
 			core::rect<s32> rect(
 				10,
