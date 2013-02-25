@@ -236,12 +236,12 @@ void * RenderThread::Thread()
 		unsigned char *img = m_quene->back();
 		m_quene->pop_back();
 		irr::video::IImage* image = m_driver->createImage(irr::video::ECF_A8R8G8B8, m_ss);
-		for(u32 i = 0;i < m_ss.Width * m_ss.Height;i++) {
+		for(u32 i = 1;i < m_ss.Width * m_ss.Height;i++) {
 			unsigned char r = img[i*3-3];
 			unsigned char g = img[i*3-2];
 			unsigned char b = img[i*3-1];
-			u32 y = m_ss.Height - floor(i/m_ss.Width);
-			u32 x = i - (floor(i/m_ss.Width)*m_ss.Width);
+			u16 y = m_ss.Height - floor(i/m_ss.Width);
+			u16 x = i - (floor(i/m_ss.Width)*m_ss.Width);
 			image->setPixel(x,y,irr::video::SColor(255,r,g,b),false);
 		}
 		free(img);
@@ -1977,12 +1977,12 @@ void the_game(
 			unsigned char *img;
 			img = rec_cache_raw[rec_dorender_counter];
 			irr::video::IImage* image = device->getVideoDriver()->createImage(irr::video::ECF_A8R8G8B8, rec_ss);
-			for(u32 i = 0;i < rec_ss.Width * rec_ss.Height;i++) {
+			for(u32 i = 1;i < rec_ss.Width * rec_ss.Height;i++) {
 				unsigned char r = img[i*3-3];
 				unsigned char g = img[i*3-2];
 				unsigned char b = img[i*3-1];
-				u32 y = rec_ss.Height - floor(i/rec_ss.Width);
-				u32 x = i - (floor(i/rec_ss.Width)*rec_ss.Width);
+				u16 y = rec_ss.Height - floor(i/rec_ss.Width);
+				u16 x = i - (floor(i/rec_ss.Width)*rec_ss.Width);
 				image->setPixel(x,y,irr::video::SColor(255,r,g,b),false);
 			}
 			free(img);
