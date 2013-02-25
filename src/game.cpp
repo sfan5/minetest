@@ -242,6 +242,7 @@ void * RenderThread::Thread()
 			unsigned char b = img[i*3-1];
 			u16 y = m_ss.Height - floor(i/m_ss.Width);
 			u16 x = i - (floor(i/m_ss.Width)*m_ss.Width);
+			if(x==0) x = m_ss.Width - 1; else x = x - 1;
 			image->setPixel(x,y,irr::video::SColor(255,r,g,b),false);
 		}
 		free(img);
@@ -1983,6 +1984,7 @@ void the_game(
 				unsigned char b = img[i*3-1];
 				u16 y = rec_ss.Height - floor(i/rec_ss.Width);
 				u16 x = i - (floor(i/rec_ss.Width)*rec_ss.Width);
+				if(x==0) x = rec_ss.Width - 1; else x = x - 1;
 				image->setPixel(x,y,irr::video::SColor(255,r,g,b),false);
 			}
 			free(img);
