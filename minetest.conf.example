@@ -49,6 +49,7 @@
 #keymap_freemove = KEY_KEY_K
 #keymap_fastmove = KEY_KEY_J
 #keymap_screenshot = KEY_F12
+#keymap_videorec = KEY_F8
 # If true, keymap_special1 instead of keymap_sneak is used for climbing down and descending
 #aux1_descends = false
 # Doubletaping the jump key toogles fly mode
@@ -190,6 +191,27 @@
 #font_size = 13
 #mono_font_path = fonts/liberationmono.ttf
 #mono_font_size = 13
+
+#Path to Video Directory
+#video_path = videos
+#Skip number of frames between capturing a frame
+#video_frameskip = 0
+#Whether to cache frames in ram instead of directly saving them to disk
+# setting this to false causes a huge performance/fps drop when recording
+#video_cacheimg = true
+#Whether to use the LibGL function or the Irrlicht function to capture frames
+# setting this to false causes a slight performance drop when recording
+#video_cacheimgraw = true
+#Whether to use Threads to record(,render) and save frames at the same time
+# setting this to false will force you to stop recording until you can (render and)save the frames
+# also this will limit your recording length to the size of your ram
+#video_threaded = true
+#Image format
+# png -> big files, high quality
+# jpg -> small files, medium - bad quality
+# you can insert any image format irrlicht can write here
+#video_fmt = png
+#  if you have the video format set to jpg and threaded video enabled you can record almost infinitly(limited by your hdd) if your harddrive is fast enough to save the jpg files
 
 # This font will be used for certain languages
 #fallback_font_path = fonts/DroidSansFallbackFull.ttf
