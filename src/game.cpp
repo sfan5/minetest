@@ -2025,7 +2025,7 @@ void the_game(
 			if(rec_renderthread.IsRunning())
 			{
 				sstatus<<"Rendering... Frame "<<rec_renderthread.m_counter<<"/"<<rec_frame<<" ";
-				if(rec_renderthread.m_counter == rec_frame) // Check if RenderThread is done
+				if(rec_renderthread.m_counter == rec_frame && !recording) // Check if RenderThread is done
 				{
 					rec_renderthread.stop();
 				}
@@ -2033,7 +2033,7 @@ void the_game(
 			if(rec_savethread.IsRunning())
 			{
 				sstatus<<"Saving... Frame "<<rec_savethread.m_counter<<"/"<<rec_frame;
-				if(rec_savethread.m_counter == rec_frame) // Check if SaveThread is done
+				if(rec_savethread.m_counter == rec_frame && !recording) // Check if SaveThread is done
 				{
 					rec_savethread.stop();
 				}
