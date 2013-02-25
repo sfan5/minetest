@@ -277,8 +277,8 @@ void * SaveThread::Thread()
 			continue;
 		}
 
-		irr::video::IImage *img = m_quene->back();
-		m_quene->pop_back();
+		irr::video::IImage *img = m_quene->front();
+		m_quene->pop_front();
 		irr::c8 filename[256]; 
 		snprintf(filename, 256, "%s" DIR_DELIM "v%04d.png", m_video_path, m_counter); 
 		if(m_driver->writeImageToFile(img, filename)) {
@@ -1605,8 +1605,8 @@ void the_game(
 	bool rec_cacheraw_setting = g_settings->getBool("video_cacheimgraw");
 	bool rec_threaded_setting = g_settings->getBool("video_threaded");
 	// Buffers
-	std::vector<unsigned char*> rec_cache_raw;
-	std::vector<irr::video::IImage*> rec_cache;
+	std::deque<unsigned char*> rec_cache_raw;
+	std::deque<irr::video::IImage*> rec_cache;
 	// Threads
 	RenderThread rec_renderthread(driver, &rec_cache_raw, &rec_cache, rec_ss);
 	SaveThread rec_savethread(driver, &rec_cache, g_settings->get("video_path").c_str(), g_settings->get("video_fmt").c_str());

@@ -22,7 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "irrlichttypes_extrabloated.h"
 #include <string>
-#include <vector>
+#include <deque>
 #include "keycode.h"
 #include <list>
 
@@ -147,7 +147,7 @@ class RenderThread : public SimpleThread
 {
 public:
 
-	RenderThread(irr::video::IVideoDriver* driver, std::vector<unsigned char*>* quene, std::vector<irr::video::IImage*>* dest, irr::core::dimension2d<u32> ss):
+	RenderThread(irr::video::IVideoDriver* driver, std::deque<unsigned char*>* quene, std::deque<irr::video::IImage*>* dest, irr::core::dimension2d<u32> ss):
 		m_dest(dest),
 		m_quene(quene),
 		m_ss(ss),
@@ -159,9 +159,9 @@ public:
 	
 	irr::video::IVideoDriver* m_driver;
 
-	std::vector<unsigned char*>* m_quene;
+	std::deque<unsigned char*>* m_quene;
 
-	std::vector<irr::video::IImage*>* m_dest;
+	std::deque<irr::video::IImage*>* m_dest;
 	
 	irr::core::dimension2d<u32> m_ss;
 	
@@ -172,7 +172,7 @@ class SaveThread : public SimpleThread
 {
 public:
 
-	SaveThread(irr::video::IVideoDriver* driver, std::vector<irr::video::IImage*>* quene, const char* videopath, const char* video_fmt):
+	SaveThread(irr::video::IVideoDriver* driver, std::deque<irr::video::IImage*>* quene, const char* videopath, const char* video_fmt):
 		m_quene(quene),
 		m_video_path(videopath),
 		m_driver(driver),
@@ -184,7 +184,7 @@ public:
 	
 	irr::video::IVideoDriver* m_driver;
 
-	std::vector<irr::video::IImage*>* m_quene;
+	std::deque<irr::video::IImage*>* m_quene;
 
 	const char* m_video_path;
 	
