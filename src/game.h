@@ -22,6 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "irrlichttypes_extrabloated.h"
 #include <string>
+#include <vector>
 #include "keycode.h"
 #include <list>
 
@@ -141,6 +142,53 @@ void the_game(
 	const SubgameSpec &gamespec, // Used for local game
 	bool simple_singleplayer_mode
 );
+
+class RenderThread : public SimpleThread
+{
+public:
+
+	RenderThread(irr::video::IVideoDriver* driver, std::vector<unsigned char*>* quene, std::vector<irr::video::IImage*>* dest, irr::core::dimension2d<u32> ss):
+		m_dest(dest),
+		m_quene(quene),
+		m_ss(ss),
+		m_driver(driver)
+	{
+	}
+
+	void * Thread();
+	
+	irr::video::IVideoDriver* m_driver;
+
+	std::vector<unsigned char*>* m_quene;
+
+	std::vector<irr::video::IImage*>* m_dest;
+	
+	irr::core::dimension2d<u32> m_ss;
+	
+	int m_counter;
+};
+
+class SaveThread : public SimpleThread
+{
+public:
+
+	SaveThread(irr::video::IVideoDriver* driver, std::vector<irr::video::IImage*>* quene, const char* videopath):
+		m_quene(quene),
+		m_video_path(videopath),
+		m_driver(driver)
+	{
+	}
+
+	void * Thread();
+	
+	irr::video::IVideoDriver* m_driver;
+
+	std::vector<irr::video::IImage*>* m_quene;
+
+	const char* m_video_path;
+	
+	int m_counter;
+};
 
 #endif
 

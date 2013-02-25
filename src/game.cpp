@@ -1387,9 +1387,13 @@ void the_game(
 	u16 rec_frameskip_cache = g_settings->getU16("video_frameskip");
 	bool rec_cache_setting = g_settings->getBool("video_cacheimg");
 	bool rec_cacheraw_setting = g_settings->getBool("video_cacheimgraw");
+	bool rec_threaded_setting = g_settings->getBool("video_threaded");
 	// Buffers
 	std::vector<unsigned char*> rec_cache_raw;
 	std::vector<irr::video::IImage*> rec_cache;
+	// Threads
+	RenderThread rec_renderthread(driver, &rec_cache_raw, &rec_cache, rec_ss);
+	SaveThread rec_savethread(driver, &rec_cache, g_settings->get("video_path").c_str());
 	/*
 		Some statistics are collected in these
 	*/
@@ -1694,7 +1698,6 @@ void the_game(
 
 			g_profiler->clear();
 		}
-
 		/*
 			Direct handling of user input
 		*/
@@ -1713,12 +1716,16 @@ void the_game(
 
 		// Input handler step() (used by the random input generator)
 		input->step(dtime);
-				
+	
+		/*
+			MineMovie functions
+		*/
+
 		if(recording) {
 			if(rec_frameskip_counter == rec_frameskip_cache) {
 				rec_frameskip_counter = 0;
 				std::wstringstream rstatus;
-				rstatus<<"Recording... FPS:"<<1./dtime<<" Frame:"<<rec_frame;
+				rstatus<<"Recording... FPS:"<<floor(1./dtime)<<" Frame:"<<rec_frame;
 				guitext2->setText(rstatus.str().c_str());
 				if(rec_cacheraw_setting) {
 					unsigned char *temp = (unsigned char*) malloc(3 * (rec_ss.Width+1) * (rec_ss.Height + 1) + 3);
@@ -1744,27 +1751,6 @@ void the_game(
 				rec_frame++;
 			} else {
 				rec_frameskip_counter++;
-			}
-		}
-				
-		if(rec_dosave) {
-			irr::video::IImage* const image = rec_cache[rec_dosave_counter];
-			irr::c8 filename[256]; 
-			snprintf(filename, 256, "%s" DIR_DELIM "v%04d.png", g_settings->get("video_path").c_str(),rec_dosave_counter); 
-			if(driver->writeImageToFile(image, filename)) {
-				std::wstringstream sstatus;
-				sstatus<<"Saving... Frame "<<rec_dosave_counter<<"/"<<rec_frame_save;
-				guitext2->setText(sstatus.str().c_str());
-				image->drop();
-			} else {
-				infostream<<"Failed to save to '"<<filename<<"'"<<std::endl;
-			}
-			if(rec_dosave_counter >= rec_frame_save) {
-				rec_dosave_counter = 0;
-				rec_dosave = false;
-				rec_cache.clear();
-			} else {
-				rec_dosave_counter++;
 			}
 		}
 		
@@ -1794,6 +1780,51 @@ void the_game(
 				rec_dorender_counter++;
 			}
 		}
+				
+		if(rec_dosave) {
+			irr::video::IImage* const image = rec_cache[rec_dosave_counter];
+			irr::c8 filename[256]; 
+			snprintf(filename, 256, "%s" DIR_DELIM "v%04d.png", g_settings->get("video_path").c_str(),rec_dosave_counter); 
+			if(driver->writeImageToFile(image, filename)) {
+				std::wstringstream sstatus;
+				sstatus<<"Saving... Frame "<<rec_dosave_counter<<"/"<<rec_frame_save;
+				guitext2->setText(sstatus.str().c_str());
+				image->drop();
+			} else {
+				infostream<<"Failed to save to '"<<filename<<"'"<<std::endl;
+			}
+			if(rec_dosave_counter >= rec_frame_save) {
+				rec_dosave_counter = 0;
+				rec_dosave = false;
+				rec_cache.clear();
+			} else {
+				rec_dosave_counter++;
+			}
+		}
+		
+		if(rec_threaded_setting)
+		{
+			std::wstringstream sstatus;
+			if(recording) sstatus<<"Recording... FPS:"<<floor(1./dtime)<<" Frame:"<<rec_frame<<" ";
+			if(rec_renderthread.IsRunning()) sstatus<<"Rendering... Frame "<<rec_renderthread.m_counter<<"/"<<rec_frame<<" ";
+			if(rec_savethread.IsRunning()) sstatus<<"Saving... Frame "<<rec_savethread.m_counter<<"/"<<rec_frame;
+			guitext2->setText(sstatus.str().c_str());
+		}
+
+		/*
+			Direct handling of user input
+		*/
+		
+		// Reset input if window not active or some menu is active
+		if(device->isWindowActive() == false
+				|| noMenuActive() == false
+				|| guienv->hasFocus(gui_chat_console))
+		{
+			input->clear();
+		}
+
+		// Input handler step() (used by the random input generator)
+		input->step(dtime);
 				
 		// Increase timer for doubleclick of "jump"
 		if(g_settings->getBool("doubletap_jump") && jump_timer <= 0.2)
@@ -2070,29 +2101,46 @@ void the_game(
 					+ itos(range_new));
 			statustext_time = 0;
 		}
-		else if(input->wasKeyDown(getKeySetting("keymap_videorec"))) {
-			if(recording) {
+		else if(input->wasKeyDown(getKeySetting("keymap_videorec")))
+		{
+			if(recording)
+			{
 				recording = false;
 				std::wstringstream sstr;
 				sstr<<"Recording stopped!";
 				statustext = sstr.str();
 				statustext_time = 0;
-				if(rec_cache_setting) {
+				if(rec_cache_setting && !rec_threaded_setting) {
 					rec_frame_save = rec_frame - 1;
-					if(rec_cacheraw_setting) {
+					if(rec_cacheraw_setting)
+					{
 						rec_dorender = true;
-					} else {
+					}
+					else
+					{
 						rec_dosave = true;
 					}
 				}
-				rec_frame = 0;
-			} else {
+			}
+			else
+			{
 				recording = true;
+				rec_ss = driver->getScreenSize();
+				if(rec_threaded_setting && rec_cache_setting)
+				{
+					if(rec_cacheraw_setting)
+					{
+						rec_renderthread = RenderThread(driver, &rec_cache_raw, &rec_cache, rec_ss);
+						rec_renderthread.Start();
+					}
+					rec_savethread = SaveThread(driver, &rec_cache, g_settings->get("video_path").c_str());
+					rec_savethread.Start();
+				}
 				std::wstringstream sstr;
 				sstr<<"Recording started!";
 				statustext = sstr.str();
 				statustext_time = 0;
-				rec_ss = driver->getScreenSize();
+				rec_frame = 0;
 			}
 		}
 		
@@ -3139,18 +3187,22 @@ void the_game(
 			guitext2->setText(narrow_to_wide(os.str()).c_str());
 			guitext2->setVisible(true);
 		}
-				else if(recording)
-				{
-					guitext2->setVisible(true);
-				}
-				else if(rec_dosave)
-				{
-					guitext2->setVisible(true);
-				}
-				else if(rec_dorender)
-				{
-					guitext2->setVisible(true);
-				}
+		else if(recording)
+		{
+			guitext2->setVisible(true);
+		}
+		else if(rec_dosave)
+		{
+			guitext2->setVisible(true);
+		}
+		else if(rec_dorender)
+		{
+			guitext2->setVisible(true);
+		}
+		else if(rec_threaded_setting && (rec_renderthread.IsRunning() or rec_savethread.IsRunning()))
+		{
+			guitext2->setVisible(true);
+		}
 		else
 		{
 			guitext2->setVisible(false);
