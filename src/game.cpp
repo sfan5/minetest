@@ -2022,8 +2022,22 @@ void the_game(
 		{
 			std::wstringstream sstatus;
 			if(recording) sstatus<<"Recording... FPS:"<<floor(1./dtime)<<" Frame:"<<rec_frame<<" ";
-			if(rec_renderthread.IsRunning()) sstatus<<"Rendering... Frame "<<rec_renderthread.m_counter<<"/"<<rec_frame<<" ";
-			if(rec_savethread.IsRunning()) sstatus<<"Saving... Frame "<<rec_savethread.m_counter<<"/"<<rec_frame;
+			if(rec_renderthread.IsRunning())
+			{
+				sstatus<<"Rendering... Frame "<<rec_renderthread.m_counter<<"/"<<rec_frame<<" ";
+				if(rec_renderthread.m_counter == rec_frame) // Check if RenderThread is done
+				{
+					rec_renderthread.stop();
+				}
+			}
+			if(rec_savethread.IsRunning())
+			{
+				sstatus<<"Saving... Frame "<<rec_savethread.m_counter<<"/"<<rec_frame;
+				if(rec_savethread.m_counter == rec_frame) // Check if SaveThread is done
+				{
+					rec_savethread.stop();
+				}
+			}
 			guitext2->setText(sstatus.str().c_str());
 		}
 
