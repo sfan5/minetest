@@ -233,8 +233,8 @@ void * RenderThread::Thread()
 			continue;
 		}
 		
-		unsigned char *img = m_quene->back();
-		m_quene->pop_back();
+		unsigned char *img = m_quene->front();
+		m_quene->pop_front();
 		irr::video::IImage* image = m_driver->createImage(irr::video::ECF_A8R8G8B8, m_ss);
 		for(u32 i = 1;i < m_ss.Width * m_ss.Height;i++) {
 			unsigned char r = img[i*3-3];
