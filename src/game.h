@@ -172,10 +172,11 @@ class SaveThread : public SimpleThread
 {
 public:
 
-	SaveThread(irr::video::IVideoDriver* driver, std::vector<irr::video::IImage*>* quene, const char* videopath):
+	SaveThread(irr::video::IVideoDriver* driver, std::vector<irr::video::IImage*>* quene, const char* videopath, const char* video_fmt):
 		m_quene(quene),
 		m_video_path(videopath),
-		m_driver(driver)
+		m_driver(driver),
+		m_video_fmt(video_fmt)
 	{
 	}
 
@@ -186,6 +187,8 @@ public:
 	std::vector<irr::video::IImage*>* m_quene;
 
 	const char* m_video_path;
+	
+	const char* m_video_fmt;
 	
 	int m_counter;
 };

@@ -210,6 +210,222 @@ public:
 };
 
 /*
+	RenderThread
+*/
+
+void * RenderThread::Thread()
+{
+	ThreadStarted();
+
+	log_register_thread("RenderThread");
+
+	DSTACK(__FUNCTION_NAME);
+	
+	BEGIN_DEBUG_EXCEPTION_HANDLER
+	
+	m_counter = 0;
+
+	while(getRun())
+	{
+		if(m_quene->size() == 0)
+		{
+			sleep_ms(10);
+			continue;
+		}
+		
+		unsigned char *img = m_quene->back();
+		m_quene->pop_back();
+		irr::video::IImage* image = m_driver->createImage(irr::video::ECF_A8R8G8B8, m_ss);
+		for(u32 i = 0;i < m_ss.Width * m_ss.Height;i++) {
+			unsigned char r = img[i*3-3];
+			unsigned char g = img[i*3-2];
+			unsigned char b = img[i*3-1];
+			u32 y = m_ss.Height - floor(i/m_ss.Width);
+			u32 x = i - (floor(i/m_ss.Width)*m_ss.Width);
+			image->setPixel(x,y,irr::video::SColor(255,r,g,b),false);
+		}
+		free(img);
+		(*m_dest).push_back(image);
+		m_counter++;
+	}
+
+	END_DEBUG_EXCEPTION_HANDLER(errorstream)
+
+	return NULL;
+}
+/*
+	SaveThread
+*/
+
+void * SaveThread::Thread()
+{
+	ThreadStarted();
+
+	log_register_thread("SaveThread");
+
+	DSTACK(__FUNCTION_NAME);
+	
+	BEGIN_DEBUG_EXCEPTION_HANDLER
+	
+	m_counter = 0;
+
+	while(getRun())
+	{
+		if(m_quene->size() == 0)
+		{
+			sleep_ms(10);
+			continue;
+		}
+
+		irr::video::IImage *img = m_quene->back();
+		m_quene->pop_back();
+		irr::c8 filename[256]; 
+		snprintf(filename, 256, "%s" DIR_DELIM "v%04d.png", m_video_path, m_counter); 
+		if(m_driver->writeImageToFile(img, filename)) {
+			m_counter++;
+			img->drop();
+		} else {
+			infostream<<"Failed to save to '"<<filename<<"'"<<std::endl;
+		}
+	}
+
+	END_DEBUG_EXCEPTION_HANDLER(errorstream)
+
+	return NULL;
+}
+/*
+	Hotbar draw routine
+*/
+void draw_hotbar(video::IVideoDriver *driver, gui::IGUIFont *font,
+		IGameDef *gamedef,
+		v2s32 centerlowerpos, s32 imgsize, s32 itemcount,
+		Inventory *inventory, s32 halfheartcount, u16 playeritem)
+{
+	InventoryList *mainlist = inventory->getList("main");
+	if(mainlist == NULL)
+	{
+		errorstream<<"draw_hotbar(): mainlist == NULL"<<std::endl;
+		return;
+	}
+	
+	s32 padding = imgsize/12;
+	//s32 height = imgsize + padding*2;
+	s32 width = itemcount*(imgsize+padding*2);
+	
+	// Position of upper left corner of bar
+	v2s32 pos = centerlowerpos - v2s32(width/2, imgsize+padding*2);
+	
+	// Draw background color
+	/*core::rect<s32> barrect(0,0,width,height);
+	barrect += pos;
+	video::SColor bgcolor(255,128,128,128);
+	driver->draw2DRectangle(bgcolor, barrect, NULL);*/
+
+	core::rect<s32> imgrect(0,0,imgsize,imgsize);
+
+	for(s32 i=0; i<itemcount; i++)
+	{
+		const ItemStack &item = mainlist->getItem(i);
+		
+		core::rect<s32> rect = imgrect + pos
+				+ v2s32(padding+i*(imgsize+padding*2), padding);
+		
+		if(playeritem == i)
+		{
+			video::SColor c_outside(255,255,0,0);
+			//video::SColor c_outside(255,0,0,0);
+			//video::SColor c_inside(255,192,192,192);
+			s32 x1 = rect.UpperLeftCorner.X;
+			s32 y1 = rect.UpperLeftCorner.Y;
+			s32 x2 = rect.LowerRightCorner.X;
+			s32 y2 = rect.LowerRightCorner.Y;
+			// Black base borders
+			driver->draw2DRectangle(c_outside,
+					core::rect<s32>(
+						v2s32(x1 - padding, y1 - padding),
+						v2s32(x2 + padding, y1)
+					), NULL);
+			driver->draw2DRectangle(c_outside,
+					core::rect<s32>(
+						v2s32(x1 - padding, y2),
+						v2s32(x2 + padding, y2 + padding)
+					), NULL);
+			driver->draw2DRectangle(c_outside,
+					core::rect<s32>(
+						v2s32(x1 - padding, y1),
+						v2s32(x1, y2)
+					), NULL);
+			driver->draw2DRectangle(c_outside,
+					core::rect<s32>(
+						v2s32(x2, y1),
+						v2s32(x2 + padding, y2)
+					), NULL);
+			/*// Light inside borders
+			driver->draw2DRectangle(c_inside,
+					core::rect<s32>(
+						v2s32(x1 - padding/2, y1 - padding/2),
+						v2s32(x2 + padding/2, y1)
+					), NULL);
+			driver->draw2DRectangle(c_inside,
+					core::rect<s32>(
+						v2s32(x1 - padding/2, y2),
+						v2s32(x2 + padding/2, y2 + padding/2)
+					), NULL);
+			driver->draw2DRectangle(c_inside,
+					core::rect<s32>(
+						v2s32(x1 - padding/2, y1),
+						v2s32(x1, y2)
+					), NULL);
+			driver->draw2DRectangle(c_inside,
+					core::rect<s32>(
+						v2s32(x2, y1),
+						v2s32(x2 + padding/2, y2)
+					), NULL);
+			*/
+		}
+
+		video::SColor bgcolor2(128,0,0,0);
+		driver->draw2DRectangle(bgcolor2, rect, NULL);
+		drawItemStack(driver, font, item, rect, NULL, gamedef);
+	}
+	
+	/*
+		Draw hearts
+	*/
+	video::ITexture *heart_texture =
+		gamedef->getTextureSource()->getTextureRaw("heart.png");
+	if(heart_texture)
+	{
+		v2s32 p = pos + v2s32(0, -20);
+		for(s32 i=0; i<halfheartcount/2; i++)
+		{
+			const video::SColor color(255,255,255,255);
+			const video::SColor colors[] = {color,color,color,color};
+			core::rect<s32> rect(0,0,16,16);
+			rect += p;
+			driver->draw2DImage(heart_texture, rect,
+				core::rect<s32>(core::position2d<s32>(0,0),
+				core::dimension2di(heart_texture->getOriginalSize())),
+				NULL, colors, true);
+			p += v2s32(16,0);
+		}
+		if(halfheartcount % 2 == 1)
+		{
+			const video::SColor color(255,255,255,255);
+			const video::SColor colors[] = {color,color,color,color};
+			core::rect<s32> rect(0,0,16/2,16);
+			rect += p;
+			core::dimension2di srcd(heart_texture->getOriginalSize());
+			srcd.Width /= 2;
+			driver->draw2DImage(heart_texture, rect,
+				core::rect<s32>(core::position2d<s32>(0,0), srcd),
+				NULL, colors, true);
+			p += v2s32(16,0);
+		}
+	}
+}
+
+/*
 	Check if a node is pointable
 */
 inline bool isPointableNode(const MapNode& n,
@@ -1393,7 +1609,7 @@ void the_game(
 	std::vector<irr::video::IImage*> rec_cache;
 	// Threads
 	RenderThread rec_renderthread(driver, &rec_cache_raw, &rec_cache, rec_ss);
-	SaveThread rec_savethread(driver, &rec_cache, g_settings->get("video_path").c_str());
+	SaveThread rec_savethread(driver, &rec_cache, g_settings->get("video_path").c_str(), g_settings->get("video_fmt").c_str());
 	/*
 		Some statistics are collected in these
 	*/
@@ -1784,7 +2000,7 @@ void the_game(
 		if(rec_dosave) {
 			irr::video::IImage* const image = rec_cache[rec_dosave_counter];
 			irr::c8 filename[256]; 
-			snprintf(filename, 256, "%s" DIR_DELIM "v%04d.png", g_settings->get("video_path").c_str(),rec_dosave_counter); 
+			snprintf(filename, 256, "%s" DIR_DELIM "v%04d.%s", g_settings->get("video_path").c_str(),rec_dosave_counter,g_settings->get("video_fmt").c_str()); 
 			if(driver->writeImageToFile(image, filename)) {
 				std::wstringstream sstatus;
 				sstatus<<"Saving... Frame "<<rec_dosave_counter<<"/"<<rec_frame_save;
@@ -2133,7 +2349,7 @@ void the_game(
 						rec_renderthread = RenderThread(driver, &rec_cache_raw, &rec_cache, rec_ss);
 						rec_renderthread.Start();
 					}
-					rec_savethread = SaveThread(driver, &rec_cache, g_settings->get("video_path").c_str());
+					rec_savethread = SaveThread(driver, &rec_cache, g_settings->get("video_path").c_str(), g_settings->get("video_fmt").c_str());
 					rec_savethread.Start();
 				}
 				std::wstringstream sstr;
