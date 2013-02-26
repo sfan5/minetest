@@ -401,6 +401,10 @@ if(USE_CURL)
 	)
 endif(USE_CURL)
 
+if(WIN32)
+	set(CLIENT_PLATFORM_LIBS "-lopengl32")
+endif()
+
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin")
 
 if(BUILD_CLIENT)
