@@ -25,6 +25,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <deque>
 #include "keycode.h"
 #include <list>
+#include "jmutex.h"
+#include "porting.h"
+#include "util/container.h"
+#include "util/thread.h"
 
 class KeyList : protected std::list<KeyPress>
 {
@@ -148,10 +152,10 @@ class RenderThread : public SimpleThread
 public:
 
 	RenderThread(irr::video::IVideoDriver* driver, std::deque<unsigned char*>* quene, std::deque<irr::video::IImage*>* dest, irr::core::dimension2d<u32> ss):
-		m_dest(dest),
+		m_driver(driver),
 		m_quene(quene),
-		m_ss(ss),
-		m_driver(driver)
+		m_dest(dest),
+		m_ss(ss)
 	{
 	}
 
@@ -172,11 +176,11 @@ class SaveThread : public SimpleThread
 {
 public:
 
-	SaveThread(irr::video::IVideoDriver* driver, std::deque<irr::video::IImage*>* quene, const char* videopath, const char* video_fmt):
+	SaveThread(irr::video::IVideoDriver* driver, std::deque<irr::video::IImage*>* quene, const char* videopath, const char* videofmt):
+		m_driver(driver),
 		m_quene(quene),
 		m_video_path(videopath),
-		m_driver(driver),
-		m_video_fmt(video_fmt)
+		m_video_fmt(videofmt)
 	{
 	}
 
@@ -187,9 +191,9 @@ public:
 	std::deque<irr::video::IImage*>* m_quene;
 
 	const char* m_video_path;
-	
+
 	const char* m_video_fmt;
-	
+
 	int m_counter;
 };
 

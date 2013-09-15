@@ -281,7 +281,7 @@ void * SaveThread::Thread()
 		irr::video::IImage *img = m_quene->front();
 		m_quene->pop_front();
 		irr::c8 filename[256]; 
-		snprintf(filename, 256, "%s" DIR_DELIM "v%04d.png", m_video_path, m_counter); 
+		snprintf(filename, 256, "%s" DIR_DELIM "v%04d.%s", m_video_path, m_counter, m_video_fmt); 
 		if(m_driver->writeImageToFile(img, filename)) {
 			m_counter++;
 			img->drop();
@@ -394,7 +394,7 @@ void draw_hotbar(video::IVideoDriver *driver, gui::IGUIFont *font,
 		Draw hearts
 	*/
 	video::ITexture *heart_texture =
-		gamedef->getTextureSource()->getTextureRaw("heart.png");
+		gamedef->getTextureSource()->getTexture("heart.png");
 	if(heart_texture)
 	{
 		v2s32 p = pos + v2s32(0, -20);
