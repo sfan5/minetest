@@ -8,6 +8,8 @@ mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
 mark_as_advanced(SQLITE3_INCLUDE_DIR SQLITE3_LIBRARY)
 mark_as_advanced(JSON_INCLUDE_DIR JSON_LIBRARY)
 
+option(ANDROID "Build for Android" 0)
+
 option(ENABLE_CURL "Enable cURL support for fetching media" 1)
 
 if (NOT ENABLE_CURL)
@@ -144,8 +146,10 @@ if(WIN32)
 else()
 	# Unix probably
 	if(BUILD_CLIENT)
-		find_package(X11 REQUIRED)
-		find_package(OpenGL REQUIRED)
+		if(NOT ANDROID)
+			find_package(X11 REQUIRED)
+			find_package(OpenGL REQUIRED)
+		endif(NOT ANDROID)
 		find_package(JPEG REQUIRED)
 		find_package(BZip2 REQUIRED)
 		find_package(PNG REQUIRED)
@@ -162,22 +166,29 @@ else()
 		endif(APPLE)
 	endif(BUILD_CLIENT)
 	find_package(ZLIB REQUIRED)
-	set(PLATFORM_LIBS -lpthread -lrt ${CMAKE_DL_LIBS})
-	#set(CLIENT_PLATFORM_LIBS -lXxf86vm)
-	# This way Xxf86vm is found on OpenBSD too
-	find_library(XXF86VM_LIBRARY Xxf86vm)
-	mark_as_advanced(XXF86VM_LIBRARY)
-	set(CLIENT_PLATFORM_LIBS ${CLIENT_PLATFORM_LIBS} ${XXF86VM_LIBRARY})
+	if(ANDROID)
+		set(PLATFORM_LIBS -landroid -llog ${CMAKE_DL_LIBS})
+		set(CLIENT_PLATFORM_LIBS -landroid -llog -lEGL -lGLESv1_CM -lGLESv2 ${CMAKE_DL_LIBS})
+	else(ANDROID)
+		set(PLATFORM_LIBS -lpthread -lrt ${CMAKE_DL_LIBS})
+		#set(CLIENT_PLATFORM_LIBS -lXxf86vm)
+		# This way Xxf86vm is found on OpenBSD too
+		find_library(XXF86VM_LIBRARY Xxf86vm)
+		mark_as_advanced(XXF86VM_LIBRARY)
+		set(CLIENT_PLATFORM_LIBS ${CLIENT_PLATFORM_LIBS} ${XXF86VM_LIBRARY})
+	endif(ANDROID)
 endif()
 
 find_package(Sqlite3 REQUIRED)
 find_package(Json REQUIRED)
 
+if(NOT ANDROID)
 option(ENABLE_GLES "Enable OpenGL ES support" 0)
 mark_as_advanced(ENABLE_GLES)
 if(ENABLE_GLES)
 	find_package(OpenGLES2)
 endif(ENABLE_GLES)
+endif(NOT ANDROID)
 
 if(USE_FREETYPE)
 	if(UNIX)
@@ -464,6 +475,13 @@ set(minetest_SRCS
 	${minetest_SCRIPT_SRCS}
 )
 
+if(ANDROID)
+	set(minetest_SRCS
+		${minetest_SRCS}
+		android/android_native_app_glue.c
+	)
+endif(ANDROID)
+
 if(USE_FREETYPE)
 	set(minetest_SRCS
 		${minetest_SRCS}
@@ -493,6 +511,7 @@ include_directories(
 	${LUA_INCLUDE_DIR}
 	${JSON_INCLUDE_DIR}
 	${PROJECT_SOURCE_DIR}/script
+	${PROJECT_SOURCE_DIR}/jthread
 )
 
 if(USE_FREETYPE)
@@ -511,7 +530,11 @@ endif(USE_CURL)
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin")
 
 if(BUILD_CLIENT)
-	add_executable(${PROJECT_NAME} ${minetest_SRCS})
+	if(NOT ANDROID)
+		add_executable(${PROJECT_NAME} ${minetest_SRCS})
+	else(NOT ANDROID)
+		add_library(${PROJECT_NAME} SHARED ${minetest_SRCS})
+	endif(NOT ANDROID)
 	add_dependencies(${PROJECT_NAME} GenerateVersion)
 	target_link_libraries(
 		${PROJECT_NAME}

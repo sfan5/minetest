@@ -79,6 +79,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "httpfetch.h"
 #include "guiEngine.h"
 #include "mapsector.h"
+#ifdef __ANDROID__
+#include "android/android_native_app_glue.h"
+#include <sys/stat.h>
+#endif
 
 #include "database-sqlite3.h"
 #ifdef USE_LEVELDB
@@ -739,6 +743,26 @@ static void print_worldspecs(const std::vector<WorldSpec> &worldspecs,
 	}
 }
 
+#ifdef __ANDROID__
+
+android_app *g_app;
+
+int main(int argc, char *argv[]);
+
+extern "C" void android_main(struct android_app* app)
+{
+	app_dummy();
+	g_app = app;
+	mkdir("/sdcard/minetest", 0666);
+	fclose(fopen("/sdcard/minetest/minetest.conf", "wb"));
+	const char *av[] = {"minetest",
+		"--verbose",
+		"--logfile", "/sdcard/minetest/debug.txt",
+		"--config", "/sdcard/minetest/minetest.conf"};
+	main(sizeof(av) / sizeof(av[0]), (char**) av);
+}
+#endif
+
 int main(int argc, char *argv[])
 {
 	int retval = 0;
@@ -1390,6 +1414,9 @@ int main(int argc, char *argv[])
 		params.Stencilbuffer = false;
 		params.Vsync         = vsync;
 		params.EventReceiver = &receiver;
+#ifdef __ANDROID__
+		params.PrivateData   = g_app;
+#endif
 		params.HighPrecisionFPU = g_settings->getBool("high_precision_fpu");
 
 		nulldevice = createDeviceEx(params);
@@ -1443,6 +1470,9 @@ int main(int argc, char *argv[])
 	params.Stencilbuffer = false;
 	params.Vsync         = vsync;
 	params.EventReceiver = &receiver;
+#ifdef __ANDROID__
+	params.PrivateData   = g_app;
+#endif
 	params.HighPrecisionFPU = g_settings->getBool("high_precision_fpu");
 
 	device = createDeviceEx(params);

@@ -134,7 +134,7 @@ int JThread::Kill()
 		runningmutex.Unlock();
 		return ERR_JTHREAD_NOTRUNNING;
 	}
-	pthread_cancel(threadid);
+	pthread_kill(threadid, SIGKILL);
 	if (started) {
 		runningmutex.Unlock();
 		int pthread_join_retval = pthread_join(threadid,&status);

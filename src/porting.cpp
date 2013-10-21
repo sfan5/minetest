@@ -180,8 +180,8 @@ bool threadBindToProcessor(threadid_t tid, int pnumber) {
 	CloseHandle(hThread);
 	return success;
 
-#elif (defined(__FreeBSD__) && (__FreeBSD_version >= 702106)) \
-	|| defined(__linux) || defined(linux)
+#elif ((defined(__FreeBSD__) && (__FreeBSD_version >= 702106)) \
+	|| defined(__linux) || defined(linux)) && !defined(__ANDROID__)
 
 	cpu_set_t cpuset;
 
