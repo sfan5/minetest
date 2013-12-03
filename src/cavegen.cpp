@@ -236,6 +236,9 @@ void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz) {
 					continue;
 
 				u32 i = vm->m_area.index(p);
+				content_t c = vm->m_data[i].getContent();
+				if (!ndef->get(c).is_ground_content)
+					continue;
 
 				if (large_cave) {
 					int full_ymin = node_min.Y - MAP_BLOCKSIZE;
@@ -250,7 +253,6 @@ void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz) {
 					}
 				} else {
 					// Don't replace air or water or lava or ignore
-					content_t c = vm->m_data[i].getContent();
 					if (c == CONTENT_IGNORE || c == CONTENT_AIR ||
 						c == c_water_source || c == c_lava_source)
 						continue;
@@ -516,7 +518,8 @@ void CaveV7::carveRoute(v3f vec, float f, bool randomize_xz, bool is_ravine) {
 				v3s16 p(cp.X + x0, cp.Y + y0, cp.Z + z0);
 				p += of;
 				
-				if (!is_ravine && mg->heightmap && should_make_cave_hole) {
+				if (!is_ravine && mg->heightmap && should_make_cave_hole &&
+					p.X <= node_max.X && p.Z <= node_max.Z) {
 					int maplen = node_max.X - node_min.X + 1;
 					int idx = (p.Z - node_min.Z) * maplen + (p.X - node_min.X);
 					if (p.Y >= mg->heightmap[idx] - 2)
@@ -530,8 +533,8 @@ void CaveV7::carveRoute(v3f vec, float f, bool randomize_xz, bool is_ravine) {
 				
 				// Don't replace air, water, lava, or ice
 				content_t c = vm->m_data[i].getContent();
-				if (c == CONTENT_AIR   || c == c_water_source ||
-					c == c_lava_source || c == c_ice)
+				if (!ndef->get(c).is_ground_content || c == CONTENT_AIR ||
+					c == c_water_source || c == c_lava_source || c == c_ice)
 					continue;
 					
 				if (large_cave) {

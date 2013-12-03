@@ -1,4 +1,4 @@
-Minetest Lua Modding API Reference 0.4.7
+Minetest Lua Modding API Reference 0.4.8
 ========================================
 More information at http://www.minetest.net/
 Developer Wiki: http://dev.minetest.net/
@@ -100,6 +100,8 @@ Mod directory structure
 mods
 |-- modname
 |   |-- depends.txt
+|   |-- screenshot.png
+|   |-- description.txt
 |   |-- init.lua
 |   |-- textures
 |   |   |-- modname_stuff.png
@@ -120,6 +122,12 @@ depends.txt:
   Optional dependencies can be defined by appending a question mark
   to a single modname. Their meaning is that if the specified mod
   is missing, that does not prevent this mod from being loaded.
+
+screenshot.png:
+  A screenshot shown in modmanager within mainmenu.
+
+description.txt:
+  File containing desctiption to be shown within mainmenu.
 
 optdepends.txt:
   An alternative way of specifying optional dependencies.
@@ -1246,6 +1254,8 @@ Environment access:
 minetest.set_node(pos, node)
 minetest.add_node(pos, node): alias set_node(pos, node)
 ^ Set node at position (node = {name="foo", param1=0, param2=0})
+minetest.swap_node(pos, node)
+^ Set node at position, but don't remove metadata
 minetest.remove_node(pos)
 ^ Equivalent to set_node(pos, "air")
 minetest.get_node(pos)
@@ -1394,8 +1404,8 @@ minetest.handle_node_drops(pos, drops, digger)
 ^ Can be overridden to get different functionality (eg. dropping items on
   ground)
 
-Rollbacks:
-minetest.rollback_get_last_node_actor(p, range, seconds) -> actor, p, seconds
+Rollback:
+minetest.rollback_get_node_actions(pos, range, seconds, limit) -> {{actor, pos, time, oldnode, newnode}, ...}
 ^ Find who has done something to a node, or near a node
 ^ actor: "player:<name>", also "liquid".
 minetest.rollback_revert_actions_by(actor, seconds) -> bool, log messages
@@ -1481,7 +1491,7 @@ minetest.delete_particlespawner(id, player)
 ^ otherwise on all clients
 
 Schematics:
-minetest.create_schematic(p1, p2, probability_list, filename)
+minetest.create_schematic(p1, p2, probability_list, filename, slice_prob_list)
 ^ Create a schematic from the volume of map specified by the box formed by p1 and p2.
 ^ Apply the specified probability values to the specified nodes in probability_list.
    ^ probability_list is an array of tables containing two fields, pos and prob.
@@ -1490,6 +1500,9 @@ minetest.create_schematic(p1, p2, probability_list, filename)
    ^ If there are two or more entries with the same pos value, the last occuring in the array is used.
    ^ If pos is not inside the box formed by p1 and p2, it is ignored.
    ^ If probability_list is nil, no probabilities are applied.
+   ^ Slice probability works in the same manner, except takes a field called ypos instead which indicates
+   ^ the y position of the slice with a probability applied.
+   ^ If slice probability list is nil, no slice probabilities are applied.
 ^ Saves schematic in the Minetest Schematic format to filename.
 
 minetest.place_schematic(pos, schematic, rotation, replacements)
@@ -1718,6 +1731,7 @@ methods:
 - is_empty(listname): return true if list is empty
 - get_size(listname): get size of a list
 - set_size(listname, size): set size of a list
+  ^ returns false on error (e.g. invalid listname or listsize)
 - get_width(listname): get width of a list
 - set_width(listname, width): set width of list; currently used for crafting
 - get_stack(listname, i): get a copy of stack index i in list
@@ -1806,11 +1820,19 @@ methods:
 - update_map():  Update map after writing chunk back to map.
   ^ To be used only by VoxelManip objects created by the mod itself; not a VoxelManip that was 
   ^ retrieved from minetest.get_mapgen_object
-- set_lighting(light):  Set the lighting within the VoxelManip
+- set_lighting(light, p1, p2):  Set the lighting within the VoxelManip to a uniform value
   ^ light is a table, {day=<0...15>, night=<0...15>}
   ^ To be used only by a VoxelManip object from minetest.get_mapgen_object
-- calc_lighting():  Calculate lighting within the VoxelManip
+  ^ (p1, p2) is the area in which lighting is set; defaults to the whole area if left out
+- get_light_data(): Gets the light data read into the VoxelManip object
+  ^ Returns an array (indicies 1 to volume) of integers ranging from 0 to 255
+  ^ Each value is the bitwise combination of day and night light values (0..15 each)
+  ^ light = day + (night * 16)
+- set_light_data(light_data):  Sets the param1 (light) contents of each node in the VoxelManip
+  ^ expects lighting data in the same format that get_light_data() returns
+- calc_lighting(p1, p2):  Calculate lighting within the VoxelManip
   ^ To be used only by a VoxelManip object from minetest.get_mapgen_object
+  ^ (p1, p2) is the area in which lighting is set; defaults to the whole area if left out
 - update_liquids():  Update liquid flow
 
 VoxelArea: A helper class for voxel areas

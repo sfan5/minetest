@@ -56,6 +56,7 @@
 			{{=server.pvp ? 'PvP ' : ''}}
 			{{=server.password ? 'Pwd ' : ''}}
 			{{=server.rollback ? 'Rol ' : ''}}
+			{{=server.can_see_far_names ? 'Far ' : ''}}
 		</td>{{?}}
 		{{? !master.no_uptime}}
 		<td class="uptime">
@@ -69,5 +70,5 @@
 	{{~}}
 </table>
 {{? master.min_clients || master.limit}}
-	<a href="#" onclick="delete master.min_clients; delete master.limit; get();">More...</a>
+	<a class="clickable" onclick="delete master.min_clients; delete master.limit; get();">More...</a>
 {{?}}

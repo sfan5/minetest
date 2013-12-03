@@ -674,9 +674,6 @@ Server::Server(
 	m_emergethread_trigger_timer = 0.0;
 	m_savemap_timer = 0.0;
 
-	m_env_mutex.Init();
-	m_con_mutex.Init();
-	m_step_dtime_mutex.Init();
 	m_step_dtime = 0.0;
 
 	if(path_world == "")
@@ -722,7 +719,7 @@ Server::Server(
 	m_mods = modconf.getMods();
 	std::vector<ModSpec> unsatisfied_mods = modconf.getUnsatisfiedMods();
 	// complain about mods with unsatisfied dependencies
-	if(!modconf.isConsistent())	
+	if(!modconf.isConsistent())
 	{
 		for(std::vector<ModSpec>::iterator it = unsatisfied_mods.begin();
 			it != unsatisfied_mods.end(); ++it)
@@ -741,10 +738,10 @@ Server::Server(
 	worldmt_settings.readConfigFile(worldmt.c_str());
 	std::vector<std::string> names = worldmt_settings.getNames();
 	std::set<std::string> load_mod_names;
-	for(std::vector<std::string>::iterator it = names.begin(); 
+	for(std::vector<std::string>::iterator it = names.begin();
 		it != names.end(); ++it)
-	{	
-		std::string name = *it;  
+	{
+		std::string name = *it;
 		if(name.compare(0,9,"load_mod_")==0 && worldmt_settings.getBool(name))
 			load_mod_names.insert(name.substr(9));
 	}
@@ -756,7 +753,7 @@ Server::Server(
 			it != unsatisfied_mods.end(); ++it)
 		load_mod_names.erase((*it).name);
 	if(!load_mod_names.empty())
-	{		
+	{
 		errorstream << "The following mods could not be found:";
 		for(std::set<std::string>::iterator it = load_mod_names.begin();
 			it != load_mod_names.end(); ++it)
@@ -1582,16 +1579,16 @@ void Server::AsyncRunStep()
 			// for them.
 			std::list<u16> far_players;
 
-			if(event->type == MEET_ADDNODE)
+			if(event->type == MEET_ADDNODE || event->type == MEET_SWAPNODE)
 			{
 				//infostream<<"Server: MEET_ADDNODE"<<std::endl;
 				prof.add("MEET_ADDNODE", 1);
 				if(disable_single_change_sending)
 					sendAddNode(event->p, event->n, event->already_known_by_peer,
-							&far_players, 5);
+							&far_players, 5, event->type == MEET_ADDNODE);
 				else
 					sendAddNode(event->p, event->n, event->already_known_by_peer,
-							&far_players, 30);
+							&far_players, 30, event->type == MEET_ADDNODE);
 			}
 			else if(event->type == MEET_REMOVENODE)
 			{
@@ -4070,7 +4067,8 @@ void Server::sendRemoveNode(v3s16 p, u16 ignore_id,
 }
 
 void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
-		std::list<u16> *far_players, float far_d_nodes)
+		std::list<u16> *far_players, float far_d_nodes,
+		bool remove_metadata)
 {
 	float maxd = far_d_nodes*BS;
 	v3f p_f = intToFloat(p, BS);
@@ -4106,13 +4104,23 @@ void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
 		}
 
 		// Create packet
-		u32 replysize = 8 + MapNode::serializedLength(client->serialization_version);
+		u32 replysize = 9 + MapNode::serializedLength(client->serialization_version);
 		SharedBuffer<u8> reply(replysize);
 		writeU16(&reply[0], TOCLIENT_ADDNODE);
 		writeS16(&reply[2], p.X);
 		writeS16(&reply[4], p.Y);
 		writeS16(&reply[6], p.Z);
 		n.serialize(&reply[8], client->serialization_version);
+		u32 index = 8 + MapNode::serializedLength(client->serialization_version);
+		writeU8(&reply[index], remove_metadata ? 0 : 1);
+		
+		if (!remove_metadata) {
+			if (client->net_proto_version <= 21) {
+				// Old clients always clear metadata; fix it
+				// by sending the full block again.
+				client->SetBlockNotSent(p);
+			}
+		}
 
 		// Send as reliable
 		m_con.Send(client->peer_id, 0, reply, true);

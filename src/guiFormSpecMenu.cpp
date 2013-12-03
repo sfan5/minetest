@@ -721,8 +721,15 @@ void GUIFormSpecMenu::parseTextList(parserData* data,std::string element) {
 				scrollbar->setPos(data->listbox_scroll[fname_w]);
 			}
 		}
+		else {
+			gui::IGUIScrollBar *scrollbar = getListboxScrollbar(e);
+			if (scrollbar) {
+				scrollbar->setPos(0);
+			}
+		}
 
-		if (str_initial_selection != "")
+		if ((str_initial_selection != "") &&
+				(str_initial_selection != "0"))
 			e->setSelected(stoi(str_initial_selection.c_str())-1);
 
 		m_listboxes.push_back(std::pair<FieldSpec,gui::IGUIListBox*>(spec,e));
@@ -1622,7 +1629,6 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 
 
 	std::vector<std::string> elements = split(m_formspec_string,']');
-
 	for (unsigned int i=0;i< elements.size();i++) {
 		parseElement(&mydata,elements[i]);
 	}
@@ -1641,7 +1647,6 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 		recalculateAbsolutePosition(false);
 		mydata.basepos = getBasePos();
 
-		changeCtype("");
 		{
 			v2s32 pos = mydata.basepos;
 			pos.Y = ((m_fields.size()+2)*60);
@@ -1652,7 +1657,7 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 			Environment->addButton(mydata.rect, this, 257, text);
 			delete[] text;
 		}
-		changeCtype("C");
+
 	}
 
 	//set initial focus if parser didn't set it
@@ -1870,8 +1875,8 @@ void GUIFormSpecMenu::drawMenu()
 				core::dimension2d<s32> absrec_size = AbsoluteRect.getSize();
 				rect = core::rect<s32>(AbsoluteRect.UpperLeftCorner.X - spec.pos.X,
 									AbsoluteRect.UpperLeftCorner.Y - spec.pos.Y,
-									AbsoluteRect.UpperLeftCorner.X + absrec_size.Width + spec.pos.X*2,
-									AbsoluteRect.UpperLeftCorner.Y + absrec_size.Height + spec.pos.Y*2);
+									AbsoluteRect.UpperLeftCorner.X + absrec_size.Width + spec.pos.X,
+									AbsoluteRect.UpperLeftCorner.Y + absrec_size.Height + spec.pos.Y);
 			}
 
 			const video::SColor color(255,255,255,255);
@@ -2292,12 +2297,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 
 			switch (event.KeyInput.Key) {
 				case KEY_RETURN:
-					if (m_allowclose) {
-						acceptInput(true);
-						quitMenu();
-					}
-					else
-						current_keys_pending.key_enter = true;
+					current_keys_pending.key_enter = true;
 					break;
 				case KEY_UP:
 					current_keys_pending.key_up = true;
@@ -2311,7 +2311,13 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 					assert("reached a source line that can't ever been reached" == 0);
 					break;
 			}
-			acceptInput();
+			if (current_keys_pending.key_enter && m_allowclose) {
+				acceptInput(true);
+				quitMenu();
+			}
+			else {
+				acceptInput();
+			}
 			return true;
 		}
 
@@ -2456,12 +2462,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 						move_amount = 0;
 					}
 				}
-				else if(getAbsoluteClippingRect().isPointInside(m_pointer))
-				{
-					// Clicked somewhere else: deselect
-					m_selected_amount = 0;
-				}
-				else
+				else if (!getAbsoluteClippingRect().isPointInside(m_pointer))
 				{
 					// Clicked outside of the window: drop
 					if(button == 1)  // right

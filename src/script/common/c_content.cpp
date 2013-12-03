@@ -334,7 +334,7 @@ ContentFeatures read_content_features(lua_State *L, int index)
 			// removes value, keeps key for next iteration
 			lua_pop(L, 1);
 			i++;
-			if(i==6){
+			if(i==CF_SPECIAL_COUNT){
 				lua_pop(L, 1);
 				break;
 			}
@@ -427,6 +427,9 @@ ContentFeatures read_content_features(lua_State *L, int index)
 	if(lua_istable(L, -1))
 		f.selection_box = read_nodebox(L, -1);
  	lua_pop(L, 1);
+
+	f.waving = getintfield_default(L, index,
+			"waving", f.waving);
 
 	// Set to true if paramtype used to be 'facedir_simple'
 	getboolfield(L, index, "legacy_facedir_simple", f.legacy_facedir_simple);
@@ -871,23 +874,13 @@ void read_groups(lua_State *L, int index,
 /******************************************************************************/
 void push_items(lua_State *L, const std::vector<ItemStack> &items)
 {
-	// Get the table insert function
-	lua_getglobal(L, "table");
-	lua_getfield(L, -1, "insert");
-	int table_insert = lua_gettop(L);
 	// Create and fill table
-	lua_newtable(L);
-	int table = lua_gettop(L);
-	for(u32 i=0; i<items.size(); i++){
-		ItemStack item = items[i];
-		lua_pushvalue(L, table_insert);
-		lua_pushvalue(L, table);
-		LuaItemStack::create(L, item);
-		if(lua_pcall(L, 2, 0, 0))
-			script_error(L, "error: %s", lua_tostring(L, -1));
+	lua_createtable(L, items.size(), 0);
+	std::vector<ItemStack>::const_iterator iter = items.begin();
+	for (u32 i = 0; iter != items.end(); iter++) {
+		LuaItemStack::create(L, *iter);
+		lua_rawseti(L, -2, ++i);
 	}
-	lua_remove(L, -2); // Remove table
-	lua_remove(L, -2); // Remove insert
 }
 
 /******************************************************************************/

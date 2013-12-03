@@ -475,7 +475,7 @@ int ModApiMapgen::l_create_schematic(lua_State *L)
 	v3s16 p2 = read_v3s16(L, 2);
 	sortBoxVerticies(p1, p2);
 	
-	std::vector<std::pair<v3s16, u8> > probability_list;
+	std::vector<std::pair<v3s16, u8> > prob_list;
 	if (lua_istable(L, 3)) {
 		lua_pushnil(L);
 		while (lua_next(L, 3)) {
@@ -485,22 +485,37 @@ int ModApiMapgen::l_create_schematic(lua_State *L)
 				lua_pop(L, 1);
 				
 				u8 prob = getintfield_default(L, -1, "prob", MTSCHEM_PROB_ALWAYS);
-				probability_list.push_back(std::make_pair(pos, prob));
+				prob_list.push_back(std::make_pair(pos, prob));
 			}
 
 			lua_pop(L, 1);
 		}
 	}
 	
-	dschem.filename = std::string(lua_tostring(L, 4));
+	std::vector<std::pair<s16, u8> > slice_prob_list;
+	if (lua_istable(L, 5)) {
+		lua_pushnil(L);
+		while (lua_next(L, 5)) {
+			if (lua_istable(L, -1)) {
+				s16 ypos = getintfield_default(L, -1, "ypos", 0);
+				u8 prob  = getintfield_default(L, -1, "prob", MTSCHEM_PROB_ALWAYS);
+				slice_prob_list.push_back(std::make_pair(ypos, prob));
+			}
+
+			lua_pop(L, 1);
+		}
+	}
+
+	const char *s = lua_tostring(L, 4);
+	dschem.filename = std::string(s ? s : "");
 
 	if (!dschem.getSchematicFromMap(map, p1, p2)) {
 		errorstream << "create_schematic: failed to get schematic "
 			"from map" << std::endl;
 		return 0;
 	}
-	
-	dschem.applyProbabilities(&probability_list, p1);
+
+	dschem.applyProbabilities(p1, &prob_list, &slice_prob_list);
 	
 	dschem.saveSchematicFile(ndef);
 	actionstream << "create_schematic: saved schematic file '"
@@ -522,11 +537,11 @@ int ModApiMapgen::l_place_schematic(lua_State *L)
 	if (!read_schematic(L, 2, &dschem, getServer(L)))
 		return 0;
 		
-	Rotation rot = ROTATE_0;
+	int rot = ROTATE_0;
 	if (lua_isstring(L, 3))
-		string_to_enum(es_Rotation, (int &)rot, std::string(lua_tostring(L, 3)));
+		string_to_enum(es_Rotation, rot, std::string(lua_tostring(L, 3)));
 		
-	dschem.rotation = rot;
+	dschem.rotation = (Rotation)rot;
 
 	if (lua_istable(L, 4)) {
 		int index = 4;
