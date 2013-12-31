@@ -81,7 +81,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapsector.h"
 #if defined(__ANDROID__) && !defined(SERVER)
 #include "android/android_native_app_glue.h"
-#include <sys/stat.h>
+#include <android/log.h>
 #endif
 
 #include "database-sqlite3.h"
@@ -753,12 +753,18 @@ extern "C" void android_main(struct android_app* app)
 {
 	app_dummy();
 	g_app = app;
-	mkdir("/sdcard/minetest", 0666);
 	fclose(fopen("/sdcard/minetest/minetest.conf", "wb"));
 	const char *av[] = {"minetest",
 		"--verbose",
 		"--logfile", "/sdcard/minetest/debug.txt",
 		"--config", "/sdcard/minetest/minetest.conf"};
+	if(!freopen("/sdcard/minetest/stdout.txt", "w", stdout))
+		__android_log_print(ANDROID_LOG_ERROR, "Minetest", "remapping stdout failed!");
+	if(!freopen("/sdcard/minetest/stderr.txt", "w", stderr))
+		__android_log_print(ANDROID_LOG_ERROR, "Minetest", "remapping stderr failed!");
+	setbuf(stdout, NULL);
+	setbuf(stderr, NULL);
+	printf("Entering main!\n");
 	main(sizeof(av) / sizeof(av[0]), (char**) av);
 }
 #endif
