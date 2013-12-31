@@ -175,6 +175,7 @@ static void buffreplace (LexState *ls, char from, char to) {
 
 
 static void trydecpoint (LexState *ls, SemInfo *seminfo) {
+#ifndef __ANDROID__
   /* format error: try to update decimal point separator */
   struct lconv *cv = localeconv();
   char old = ls->decpoint;
@@ -185,6 +186,10 @@ static void trydecpoint (LexState *ls, SemInfo *seminfo) {
     buffreplace(ls, ls->decpoint, '.');  /* undo change (for error message) */
     luaX_lexerror(ls, "malformed number", TK_NUMBER);
   }
+#else
+  (void)seminfo;
+  luaX_lexerror(ls, "malformed number", TK_NUMBER);
+#endif
 }
 
 

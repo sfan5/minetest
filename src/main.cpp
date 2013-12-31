@@ -79,7 +79,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "httpfetch.h"
 #include "guiEngine.h"
 #include "mapsector.h"
-#ifdef __ANDROID__
+#if defined(__ANDROID__) && !defined(SERVER)
 #include "android/android_native_app_glue.h"
 #include <sys/stat.h>
 #endif
@@ -743,7 +743,7 @@ static void print_worldspecs(const std::vector<WorldSpec> &worldspecs,
 	}
 }
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) && !defined(SERVER)
 
 android_app *g_app;
 
