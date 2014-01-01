@@ -356,7 +356,7 @@ void initializePaths()
 	/*
 		Linux
 	*/
-	#elif defined(linux)
+	#elif defined(linux) && !defined(__ANDROID__)
 
 	char buf[BUFSIZ];
 	memset(buf, 0, BUFSIZ);
@@ -403,6 +403,14 @@ void initializePaths()
 
 	path_share = std::string(buf) + "/..";
 	path_user = std::string(buf) + "/..";
+
+	/*
+		Android
+	*/
+	#elif defined(__ANDROID__)
+
+	path_share = "/sdcard/minetest";
+	path_user = "/sdcard/minetest";
 
 	#else
 

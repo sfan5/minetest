@@ -754,17 +754,25 @@ extern "C" void android_main(struct android_app* app)
 	app_dummy();
 	g_app = app;
 	fclose(fopen("/sdcard/minetest/minetest.conf", "wb"));
-	const char *av[] = {"minetest",
-		"--verbose",
+	const char *av[] = {
+		"minetest",
+#ifndef NDEBUG
+		"--verbose", "--disable-unittests",
+#endif
 		"--logfile", "/sdcard/minetest/debug.txt",
-		"--config", "/sdcard/minetest/minetest.conf"};
+		"--config", "/sdcard/minetest/minetest.conf"
+	};
+#ifndef NDEBUG
 	if(!freopen("/sdcard/minetest/stdout.txt", "w", stdout))
-		__android_log_print(ANDROID_LOG_ERROR, "Minetest", "remapping stdout failed!");
+		__android_log_print(ANDROID_LOG_WARN, "Minetest", "remapping stdout failed!");
 	if(!freopen("/sdcard/minetest/stderr.txt", "w", stderr))
-		__android_log_print(ANDROID_LOG_ERROR, "Minetest", "remapping stderr failed!");
+		__android_log_print(ANDROID_LOG_WARN, "Minetest", "remapping stderr failed!");
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
-	printf("Entering main!\n");
+	/*char buf[100];
+	snprintf(buf, 99, "su -c \"/data/local/tmp/gdbserver --attach :1234 %d\"", getpid());
+	system(buf);*/
+#endif
 	main(sizeof(av) / sizeof(av[0]), (char**) av);
 }
 #endif
