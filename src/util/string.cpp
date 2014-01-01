@@ -29,15 +29,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "../hex.h"
 #include "../porting.h"
 
-#ifdef __ANDROID__ // Workaround because Android's libc sucks
-#include <wchar.h>
-unsigned long ___runetype(__ct_rune_t rune)
-{
-	(void)rune;
-	return 0L;
-}
-#endif
-
 std::wstring narrow_to_wide(const std::string& mbs)
 {
 	size_t wcl = mbs.size();

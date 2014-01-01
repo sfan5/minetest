@@ -480,6 +480,7 @@ if(ANDROID)
 	set(minetest_SRCS
 		${minetest_SRCS}
 		android/android_native_app_glue.c
+		android/workarounds.c
 	)
 endif(ANDROID)
 
