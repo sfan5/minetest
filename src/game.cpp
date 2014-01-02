@@ -227,7 +227,7 @@ void * RenderThread::Thread()
 	
 	m_counter = 0;
 
-	while(getRun())
+	while(!StopRequested())
 	{
 		if(m_quene->size() == 0)
 		{
@@ -262,7 +262,6 @@ void * RenderThread::Thread()
 
 void * SaveThread::Thread()
 {
-	ThreadStarted();
 
 	log_register_thread("SaveThread");
 
@@ -272,7 +271,7 @@ void * SaveThread::Thread()
 	
 	m_counter = 0;
 
-	while(getRun())
+	while(!StopRequested())
 	{
 		if(m_quene->size() == 0)
 		{
@@ -2058,7 +2057,7 @@ void the_game(
 				sstatus<<"Rendering... Frame "<<rec_renderthread.m_counter<<"/"<<rec_frame<<" ";
 				if(rec_renderthread.m_counter == rec_frame && !recording) // Check if RenderThread is done
 				{
-					rec_renderthread.stop();
+					rec_renderthread.Stop();
 				}
 			}
 			if(rec_savethread.IsRunning())
@@ -2066,7 +2065,7 @@ void the_game(
 				sstatus<<"Saving... Frame "<<rec_savethread.m_counter<<"/"<<rec_frame;
 				if(rec_savethread.m_counter == rec_frame && !recording) // Check if SaveThread is done
 				{
-					rec_savethread.stop();
+					rec_savethread.Stop();
 				}
 			}
 			guitext2->setText(sstatus.str().c_str());

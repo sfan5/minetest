@@ -147,7 +147,7 @@ void the_game(
 	bool simple_singleplayer_mode
 );
 
-class RenderThread : public SimpleThread
+class RenderThread : public JThread
 {
 public:
 
@@ -172,7 +172,7 @@ public:
 	int m_counter;
 };
 
-class SaveThread : public SimpleThread
+class SaveThread : public JThread
 {
 public:
 
