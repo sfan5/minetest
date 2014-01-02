@@ -63,4 +63,7 @@ locale/
 *.cbp
 *.layout
 *.o
-
+Android/bin
+Android/libs
+Android/local.properties
+Android/proguard-project.txt
