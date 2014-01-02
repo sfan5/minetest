@@ -530,13 +530,13 @@ if(USE_CURL)
 endif(USE_CURL)
 
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin")
-set(LIBRARY_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin")
 
 if(BUILD_CLIENT)
 	if(NOT ANDROID)
 		add_executable(${PROJECT_NAME} ${minetest_SRCS})
 	else(NOT ANDROID)
 		add_library(${PROJECT_NAME} SHARED ${minetest_SRCS})
+		set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 	endif(NOT ANDROID)
 	add_dependencies(${PROJECT_NAME} GenerateVersion)
 	target_link_libraries(
