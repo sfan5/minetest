@@ -1,3 +1,3 @@
 all:
 	@mkdir -p libs/armeabi
-	@cp -v ../src/libminetest.so libs/armeabi/libminetest.so
+	@cp -v ../bin/libminetest.so libs/armeabi/libminetest.so
