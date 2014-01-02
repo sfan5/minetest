@@ -428,7 +428,7 @@ public:
 	void prepareBlock(MapBlock *block);
 
 	// Helper for placing objects on ground level
-	s16 findGroundLevel(v2s16 p2d);
+	s16 findGroundLevel(v2s16 p2d, bool cacheBlocks);
 
 	/*
 		Misc. helper functions for fiddling with directory and file
@@ -496,6 +496,7 @@ public:
 	u64 getSeed(){ return m_seed; }
 
 	MapgenParams *getMapgenParams(){ return m_mgparams; }
+	void setMapgenParams(MapgenParams *mgparams){ m_mgparams = mgparams; }
 
 	// Parameters fed to the Mapgen
 	MapgenParams *m_mgparams;

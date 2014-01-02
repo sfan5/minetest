@@ -24,17 +24,15 @@ minetest.registered_aliases = {}
 
 -- For tables that are indexed by item name:
 -- If table[X] does not exist, default to table[minetest.registered_aliases[X]]
-local function set_alias_metatable(table)
-	setmetatable(table, {
-		__index = function(name)
-			return rawget(table, minetest.registered_aliases[name])
-		end
-	})
-end
-set_alias_metatable(minetest.registered_items)
-set_alias_metatable(minetest.registered_nodes)
-set_alias_metatable(minetest.registered_craftitems)
-set_alias_metatable(minetest.registered_tools)
+local alias_metatable = {
+	__index = function(t, name)
+		return rawget(t, minetest.registered_aliases[name])
+	end
+}
+setmetatable(minetest.registered_items, alias_metatable)
+setmetatable(minetest.registered_nodes, alias_metatable)
+setmetatable(minetest.registered_craftitems, alias_metatable)
+setmetatable(minetest.registered_tools, alias_metatable)
 
 -- These item names may not be used because they would interfere
 -- with legacy itemstrings
@@ -316,6 +314,45 @@ minetest.register_item(":", {
 	groups = {not_in_creative_inventory=1},
 })
 
+
+function minetest.run_callbacks(callbacks, mode, ...)
+	assert(type(callbacks) == "table")
+	local cb_len = #callbacks
+	if cb_len == 0 then
+		if mode == 2 or mode == 3 then
+			return true
+		elseif mode == 4 or mode == 5 then
+			return false
+		end
+	end
+	local ret = nil
+	for i = 1, cb_len do
+		local cb_ret = callbacks[i](...)
+
+		if mode == 0 and i == 1 then
+			ret = cb_ret
+		elseif mode == 1 and i == cb_len then
+			ret = cb_ret
+		elseif mode == 2 then
+			if not cb_ret or i == 1 then
+				ret = cb_ret
+			end
+		elseif mode == 3 then
+			if cb_ret then
+				return cb_ret
+			end
+			ret = cb_ret
+		elseif mode == 4 then
+			if (cb_ret and not ret) or i == 1 then
+				ret = cb_ret
+			end
+		elseif mode == 5 and cb_ret then
+			return cb_ret
+		end
+	end
+	return ret
+end
+
 --
 -- Callback registration
 --
@@ -343,6 +380,7 @@ minetest.registered_on_generateds, minetest.register_on_generated = make_registr
 minetest.registered_on_newplayers, minetest.register_on_newplayer = make_registration()
 minetest.registered_on_dieplayers, minetest.register_on_dieplayer = make_registration()
 minetest.registered_on_respawnplayers, minetest.register_on_respawnplayer = make_registration()
+minetest.registered_on_prejoinplayers, minetest.register_on_prejoinplayer = make_registration()
 minetest.registered_on_joinplayers, minetest.register_on_joinplayer = make_registration()
 minetest.registered_on_leaveplayers, minetest.register_on_leaveplayer = make_registration()
 minetest.registered_on_player_receive_fields, minetest.register_on_player_receive_fields = make_registration_reverse()

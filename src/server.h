@@ -55,23 +55,6 @@ class ServerEnvironment;
 struct SimpleSoundSpec;
 
 
-class ServerError : public std::exception
-{
-public:
-	ServerError(const std::string &s)
-	{
-		m_s = "ServerError: ";
-		m_s += s;
-	}
-	virtual ~ServerError() throw()
-	{}
-	virtual const char * what() const throw()
-	{
-		return m_s.c_str();
-	}
-	std::string m_s;
-};
-
 /*
 	Some random functions
 */
@@ -151,15 +134,6 @@ struct PrioritySortedBlockTransfer
 	float priority;
 	v3s16 pos;
 	u16 peer_id;
-};
-
-struct MediaRequest
-{
-	std::string name;
-
-	MediaRequest(const std::string &name_=""):
-		name(name_)
-	{}
 };
 
 struct MediaInfo
@@ -569,7 +543,7 @@ private:
 	void fillMediaCache();
 	void sendMediaAnnouncement(u16 peer_id);
 	void sendRequestedMedia(u16 peer_id,
-			const std::list<MediaRequest> &tosend);
+			const std::list<std::string> &tosend);
 
 	void sendDetachedInventory(const std::string &name, u16 peer_id);
 	void sendDetachedInventoryToAll(const std::string &name);

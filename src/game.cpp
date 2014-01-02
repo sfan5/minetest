@@ -71,6 +71,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <GL/gl.h> // Needed for Raw Image-Cache
 #include <math.h> // Needed for Rendering
 #include "util/directiontables.h"
+#include "util/pointedthing.h"
 
 /*
 	Text input system
@@ -457,6 +458,8 @@ PointedThing getPointedThing(Client *client, v3f player_position,
 	INodeDefManager *nodedef = client->getNodeDefManager();
 	ClientMap &map = client->getEnv().getClientMap();
 
+	f32 mindistance = BS * 1001;
+
 	// First try to find a pointed at active object
 	if(look_for_object)
 	{
@@ -478,16 +481,15 @@ PointedThing getPointedThing(Client *client, v3f player_position,
 						selection_box->MaxEdge + pos));
 			}
 
+			mindistance = (selected_object->getPosition() - camera_position).getLength();
 
 			result.type = POINTEDTHING_OBJECT;
 			result.object_id = selected_object->getId();
-			return result;
 		}
 	}
 
 	// That didn't work, try to find a pointed at node
 
-	f32 mindistance = BS * 1001;
 	
 	v3s16 pos_i = floatToInt(player_position, BS);
 
@@ -1034,44 +1036,6 @@ public:
 		services->setPixelShaderConstant("eyePosition", (irr::f32*)&eye_position, 3);
 		services->setVertexShaderConstant("eyePosition", (irr::f32*)&eye_position, 3);
 
-		float enable_bumpmapping = 0;
-		if (g_settings->getBool("enable_bumpmapping"))
-			enable_bumpmapping = 1;
-		services->setPixelShaderConstant("enableBumpmapping", &enable_bumpmapping, 1);
-
-		float enable_parallax_occlusion = 0;
-		if  (g_settings->getBool("enable_parallax_occlusion"));{
-			enable_parallax_occlusion = 1;
-			float parallax_occlusion_scale = g_settings->getFloat("parallax_occlusion_scale");
-			services->setPixelShaderConstant("parallaxOcclusionScale", &parallax_occlusion_scale, 1);
-			float parallax_occlusion_bias = g_settings->getFloat("parallax_occlusion_bias");
-			services->setPixelShaderConstant("parallaxOcclusionBias", &parallax_occlusion_bias, 1);
-		}
-		services->setPixelShaderConstant("enableParallaxOcclusion", &enable_parallax_occlusion, 1);
-
-		float enable_waving_water = 0;
-		if (g_settings->getBool("enable_waving_water")){
-			enable_waving_water = 1;
-			float water_wave_height_f = g_settings->getFloat("water_wave_height");
-			services->setVertexShaderConstant("waterWaveHeight", &water_wave_height_f, 1);
-			float water_wave_length_f = g_settings->getFloat("water_wave_length");
-			services->setVertexShaderConstant("waterWaveLength", &water_wave_length_f, 1);
-			float water_wave_speed_f = g_settings->getFloat("water_wave_speed");
-			services->setVertexShaderConstant("waterWaveSpeed", &water_wave_speed_f, 1);
-		}
-		services->setVertexShaderConstant("enableWavingWater", &enable_waving_water, 1);
-
-		float enable_waving_leaves = 0;
-		if (g_settings->getBool("enable_waving_leaves"))
-			enable_waving_leaves = 1;
-		services->setVertexShaderConstant("enableWavingLeaves", &enable_waving_leaves, 1);
-
-		float enable_waving_plants = 0;
-		if (g_settings->getBool("enable_waving_plants"))
-			enable_waving_plants = 1;
-		services->setVertexShaderConstant("enableWavingPlants", &enable_waving_plants, 1);
-
-
 		// Normal map texture layer
 		int layer1 = 1;
 		int layer2 = 2;
@@ -1464,13 +1428,19 @@ void the_game(
 				server->step(dtime);
 			
 			// End condition
-			if(client.texturesReceived() &&
+			if(client.mediaReceived() &&
 					client.itemdefReceived() &&
 					client.nodedefReceived()){
 				got_content = true;
 				break;
 			}
 			// Break conditions
+			if(client.accessDenied()){
+				error_message = L"Access denied. Reason: "
+						+client.accessDeniedReason();
+				errorstream<<wide_to_narrow(error_message)<<std::endl;
+				break;
+			}
 			if(!client.connectedAndInitialized()){
 				error_message = L"Client disconnected";
 				errorstream<<wide_to_narrow(error_message)<<std::endl;
@@ -1574,7 +1544,7 @@ void the_game(
 	*/
 
 	Sky *sky = NULL;
-	sky = new Sky(smgr->getRootSceneNode(), smgr, -1);
+	sky = new Sky(smgr->getRootSceneNode(), smgr, -1, client.getEnv().getLocalPlayer());
 	
 	/*
 		A copy of the local inventory
@@ -1700,7 +1670,7 @@ void the_game(
 	bool invert_mouse = g_settings->getBool("invert_mouse");
 
 	bool respawn_menu_active = false;
-	bool update_wielded_item_trigger = false;
+	bool update_wielded_item_trigger = true;
 
 	bool show_hud = true;
 	bool show_chat = true;
@@ -1749,6 +1719,11 @@ void the_game(
 			gamedef, player, &local_inventory);
 
 	bool use_weather = g_settings->getBool("weather");
+
+	core::stringw str = L"Minetest [";
+	str += driver->getName();
+	str += "]";
+	device->setWindowCaption(str.c_str());
 
 	for(;;)
 	{
@@ -2733,10 +2708,6 @@ void the_game(
 					delete(event.show_formspec.formspec);
 					delete(event.show_formspec.formname);
 				}
-				else if(event.type == CE_TEXTURES_UPDATED)
-				{
-					update_wielded_item_trigger = true;
-				}
 				else if(event.type == CE_SPAWN_PARTICLE)
 				{
 					LocalPlayer* player = client.getEnv().getLocalPlayer();
@@ -3430,10 +3401,13 @@ void the_game(
 			scenetime_avg = scenetime_avg * 0.95 + (float)scenetime*0.05;
 			static float endscenetime_avg = 0;
 			endscenetime_avg = endscenetime_avg * 0.95 + (float)endscenetime*0.05;*/
-			
+
+			u16 fps = (1.0/dtime_avg1);
+
 			std::ostringstream os(std::ios_base::binary);
 			os<<std::fixed
 				<<"Minetest "<<minetest_version_hash
+				<<" FPS = "<<fps
 				<<" (R: range_all="<<draw_control.range_all<<")"
 				<<std::setprecision(0)
 				<<" drawtime = "<<drawtime_avg
@@ -3838,21 +3812,6 @@ void the_game(
 			End of drawing
 		*/
 
-		static s16 lastFPS = 0;
-		//u16 fps = driver->getFPS();
-		u16 fps = (1.0/dtime_avg1);
-
-		if (lastFPS != fps)
-		{
-			core::stringw str = L"Minetest [";
-			str += driver->getName();
-			str += "] FPS=";
-			str += fps;
-
-			device->setWindowCaption(str.c_str());
-			lastFPS = fps;
-		}
-
 		/*
 			Log times and stuff for visualization
 		*/
@@ -3900,14 +3859,12 @@ void the_game(
 				L" running a different version of Minetest.";
 		errorstream<<wide_to_narrow(error_message)<<std::endl;
 	}
-	catch(ServerError &e)
-	{
+	catch(ServerError &e) {
 		error_message = narrow_to_wide(e.what());
-		errorstream<<wide_to_narrow(error_message)<<std::endl;
+		errorstream << "ServerError: " << e.what() << std::endl;
 	}
-	catch(ModError &e)
-	{
-		errorstream<<e.what()<<std::endl;
+	catch(ModError &e) {
+		errorstream << "ModError: " << e.what() << std::endl;
 		error_message = narrow_to_wide(e.what()) + wgettext("\nCheck debug.txt for details.");
 	}
 

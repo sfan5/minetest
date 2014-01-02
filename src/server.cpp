@@ -73,14 +73,14 @@ public:
 	{}
 };
 
-class ServerThread : public SimpleThread
+class ServerThread : public JThread
 {
 	Server *m_server;
 
 public:
 
 	ServerThread(Server *server):
-		SimpleThread(),
+		JThread(),
 		m_server(server)
 	{
 	}
@@ -98,7 +98,7 @@ void * ServerThread::Thread()
 
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
-	while(getRun())
+	while(!StopRequested())
 	{
 		try{
 			//TimeTaker timer("AsyncRunStep() + Receive()");
@@ -703,6 +703,10 @@ Server::Server(
 	// Create emerge manager
 	m_emerge = new EmergeManager(this);
 
+	// Create world if it doesn't exist
+	if(!initializeWorld(m_path_world, m_gamespec.id))
+		throw ServerError("Failed to initialize world");
+
 	// Create ban manager
 	std::string ban_path = m_path_world+DIR_DELIM+"ipban.txt";
 	m_banmanager = new BanManager(ban_path);
@@ -710,10 +714,6 @@ Server::Server(
 	// Create rollback manager
 	std::string rollback_path = m_path_world+DIR_DELIM+"rollback.txt";
 	m_rollback = createRollbackManager(rollback_path, this);
-
-	// Create world if it doesn't exist
-	if(!initializeWorld(m_path_world, m_gamespec.id))
-		throw ServerError("Failed to initialize world");
 
 	ModConfiguration modconf(m_path_world);
 	m_mods = modconf.getMods();
@@ -823,6 +823,7 @@ Server::Server(
 	
 	// Initialize mapgens
 	m_emerge->initMapgens(mgparams);
+	servermap->setMapgenParams(m_emerge->params);
 
 	// Give environment reference to scripting api
 	m_script->initializeEnvironment(m_env);
@@ -962,14 +963,13 @@ void Server::start(unsigned short port)
 	infostream<<"Starting server on port "<<port<<"..."<<std::endl;
 
 	// Stop thread if already running
-	m_thread->stop();
+	m_thread->Stop();
 
 	// Initialize connection
 	m_con.SetTimeoutMs(30);
 	m_con.Serve(port);
 
 	// Start thread
-	m_thread->setRun(true);
 	m_thread->Start();
 
 	// ASCII art for the win!
@@ -992,9 +992,9 @@ void Server::stop()
 	infostream<<"Server: Stopping and waiting threads"<<std::endl;
 
 	// Stop threads (set run=false first so both start stopping)
-	m_thread->setRun(false);
+	m_thread->Stop();
 	//m_emergethread.setRun(false);
-	m_thread->stop();
+	m_thread->Wait();
 	//m_emergethread.stop();
 
 	infostream<<"Server: Threads stopped"<<std::endl;
@@ -1681,7 +1681,7 @@ void Server::AsyncRunStep()
 		{
 			counter = 0.0;
 
-			m_emerge->triggerAllThreads();
+			m_emerge->startAllThreads();
 
 			// Update m_enable_rollback_recording here too
 			m_enable_rollback_recording =
@@ -1968,6 +1968,19 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 					<<"tried to connect from "<<addr_s<<std::endl;
 			DenyAccess(peer_id, L"Name is not allowed");
 			return;
+		}
+
+		{
+			std::string reason;
+			if(m_script->on_prejoinplayer(playername, addr_s, reason))
+			{
+				actionstream<<"Server: Player with the name \""<<playername<<"\" "
+						<<"tried to connect from "<<addr_s<<" "
+						<<"but it was disallowed for the following reason: "
+						<<reason<<std::endl;
+				DenyAccess(peer_id, narrow_to_wide(reason.c_str()));
+				return;
+			}
 		}
 
 		infostream<<"Server: New connection: \""<<playername<<"\" from "
@@ -2285,8 +2298,9 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		}
 
 		/*infostream<<"Server::ProcessData(): Moved player "<<peer_id<<" to "
-				<<"("<<position.X<<","<<position.Y<<","<<position.Z<<")"
-				<<" pitch="<<pitch<<" yaw="<<yaw<<std::endl;*/
+															<<"("<<position.X<<","<<position.Y<<","<<position.Z<<")"
+															<<" pitch="<<pitch<<" yaw="<<yaw<<std::endl;*/
+
 	}
 	else if(command == TOSERVER_GOTBLOCKS)
 	{
@@ -2731,7 +2745,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		std::string datastring((char*)&data[2], datasize-2);
 		std::istringstream is(datastring, std::ios_base::binary);
 
-		std::list<MediaRequest> tosend;
+		std::list<std::string> tosend;
 		u16 numfiles = readU16(is);
 
 		infostream<<"Sending "<<numfiles<<" files to "
@@ -2740,7 +2754,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 		for(int i = 0; i < numfiles; i++) {
 			std::string name = deSerializeString(is);
-			tosend.push_back(MediaRequest(name));
+			tosend.push_back(name);
 			verbosestream<<"TOSERVER_REQUEST_MEDIA: requested file "
 					<<name<<std::endl;
 		}
@@ -4439,7 +4453,7 @@ struct SendableMedia
 };
 
 void Server::sendRequestedMedia(u16 peer_id,
-		const std::list<MediaRequest> &tosend)
+		const std::list<std::string> &tosend)
 {
 	DSTACK(__FUNCTION_NAME);
 
@@ -4456,17 +4470,19 @@ void Server::sendRequestedMedia(u16 peer_id,
 
 	u32 file_size_bunch_total = 0;
 
-	for(std::list<MediaRequest>::const_iterator i = tosend.begin();
+	for(std::list<std::string>::const_iterator i = tosend.begin();
 			i != tosend.end(); ++i)
 	{
-		if(m_media.find(i->name) == m_media.end()){
+		const std::string &name = *i;
+
+		if(m_media.find(name) == m_media.end()){
 			errorstream<<"Server::sendRequestedMedia(): Client asked for "
-					<<"unknown file \""<<(i->name)<<"\""<<std::endl;
+					<<"unknown file \""<<(name)<<"\""<<std::endl;
 			continue;
 		}
 
 		//TODO get path + name
-		std::string tpath = m_media[(*i).name].path;
+		std::string tpath = m_media[name].path;
 
 		// Read data
 		std::ifstream fis(tpath.c_str(), std::ios_base::binary);
@@ -4492,14 +4508,14 @@ void Server::sendRequestedMedia(u16 peer_id,
 		}
 		if(bad){
 			errorstream<<"Server::sendRequestedMedia(): Failed to read \""
-					<<(*i).name<<"\""<<std::endl;
+					<<name<<"\""<<std::endl;
 			continue;
 		}
 		/*infostream<<"Server::sendRequestedMedia(): Loaded \""
 				<<tname<<"\""<<std::endl;*/
 		// Put in list
 		file_bunches[file_bunches.size()-1].push_back(
-				SendableMedia((*i).name, tpath, tmp_os.str()));
+				SendableMedia(name, tpath, tmp_os.str()));
 
 		// Start next bunch if got enough data
 		if(file_size_bunch_total >= bytes_per_bunch){
@@ -5318,10 +5334,10 @@ v3f findSpawnPos(ServerMap &map)
 				-range + (myrand() % (range * 2)));
 
 		// Get ground height at point
-		s16 groundheight = map.findGroundLevel(nodepos2d);
+		s16 groundheight = map.findGroundLevel(nodepos2d, g_settings->getBool("cache_block_before_spawn"));
 		if (groundheight <= water_level) // Don't go underwater
 			continue;
-		if (groundheight > water_level + 6) // Don't go to high places
+		if (groundheight > water_level + g_settings->getS16("max_spawn_height")) // Don't go to high places
 			continue;
 
 		nodepos = v3s16(nodepos2d.X, groundheight, nodepos2d.Y);
