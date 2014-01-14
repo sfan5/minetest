@@ -753,14 +753,11 @@ extern "C" void android_main(struct android_app* app)
 {
 	app_dummy();
 	g_app = app;
-	fclose(fopen("/sdcard/minetest/minetest.conf", "wb"));
 	const char *av[] = {
 		"minetest",
 #ifndef NDEBUG
 		"--verbose", "--disable-unittests",
 #endif
-		"--logfile", "/sdcard/minetest/debug.txt",
-		"--config", "/sdcard/minetest/minetest.conf"
 	};
 #ifndef NDEBUG
 	if(!freopen("/sdcard/minetest/stdout.txt", "w", stdout))
@@ -770,7 +767,7 @@ extern "C" void android_main(struct android_app* app)
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 	/*char buf[100];
-	snprintf(buf, 99, "su -c \"/data/local/tmp/gdbserver --attach :1234 %d\"", getpid());
+	snprintf(buf, 99, "su -c \"/data/local/tmp/gdbserver --attach :5039 %d\"", getpid());
 	system(buf);*/
 #endif
 	main(sizeof(av) / sizeof(av[0]), (char**) av);

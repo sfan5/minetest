@@ -275,6 +275,15 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("high_precision_fpu", "true");
 
 	settings->setDefault("language", "");
+
+	// Android
+#ifdef __ANDROID__
+	settings->setDefault("screenW", "960");
+	settings->setDefault("screenH", "540");
+	settings->setDefault("fullscreen", "true");
+	settings->setDefault("video_driver", "ogles1");
+	settings->setDefault("mouse_sensitivity", "0.2");
+#endif
 }
 
 void override_default_settings(Settings *settings, Settings *from)
