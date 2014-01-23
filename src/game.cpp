@@ -1612,6 +1612,16 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 	float repeat_rightclick_timer = 0;
 
 	/*
+		Touchscreen controls
+	*/
+
+	u16 rpadsize = g_settings->getU16("touchscreen_rpad_size");
+	float rmargindiv = g_settings->getFloat("touchscreen_rpad_margindiv");
+	v2f rpadbase = v2f(
+		screensize.X-rpadsize-(screensize.X/rmargindiv),
+		screensize.Y-rpadsize-(screensize.Y/rmargindiv));
+
+	/*
 		Shader constants
 	*/
 	shsrc->addGlobalConstantSetter(new GameGlobalShaderConstantSetter(
@@ -1863,7 +1873,9 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		/*
 			Direct handling of user input
 		*/
-		
+
+		bool lmouse_handled = false;
+
 		// Reset input if window not active or some menu is active
 		if(device->isWindowActive() == false
 				|| noMenuActive() == false
@@ -2251,32 +2263,57 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				first_loop_after_window_activation = false;
 			}
 			else{
-				s32 dx = input->getMousePos().X - displaycenter.X;
-				s32 dy = input->getMousePos().Y - displaycenter.Y;
-				if(invert_mouse || player->camera_mode == CAMERA_MODE_THIRD_FRONT)
-					dy = -dy;
-				//infostream<<"window active, pos difference "<<dx<<","<<dy<<std::endl;
+				if(!g_settings->getBool("touchscreen"))
+				{
+					s32 dx = input->getMousePos().X - displaycenter.X;
+					s32 dy = input->getMousePos().Y - displaycenter.Y;
+					if(invert_mouse || player->camera_mode == CAMERA_MODE_THIRD_FRONT)
+						dy = -dy;
+					//infostream<<"window active, pos difference "<<dx<<","<<dy<<std::endl;
 				
-				/*const float keyspeed = 500;
-				if(input->isKeyDown(irr::KEY_UP))
-					dy -= dtime * keyspeed;
-				if(input->isKeyDown(irr::KEY_DOWN))
-					dy += dtime * keyspeed;
-				if(input->isKeyDown(irr::KEY_LEFT))
-					dx -= dtime * keyspeed;
-				if(input->isKeyDown(irr::KEY_RIGHT))
-					dx += dtime * keyspeed;*/
+					/*const float keyspeed = 500;
+					if(input->isKeyDown(irr::KEY_UP))
+						dy -= dtime * keyspeed;
+					if(input->isKeyDown(irr::KEY_DOWN))
+						dy += dtime * keyspeed;
+					if(input->isKeyDown(irr::KEY_LEFT))
+						dx -= dtime * keyspeed;
+					if(input->isKeyDown(irr::KEY_RIGHT))
+						dx += dtime * keyspeed;*/
 				
-				float d = g_settings->getFloat("mouse_sensitivity");
-				d = rangelim(d, 0.01, 100.0);
-				camera_yaw -= dx*d;
-				camera_pitch += dy*d;
-				if(camera_pitch < -89.5) camera_pitch = -89.5;
-				if(camera_pitch > 89.5) camera_pitch = 89.5;
+					float d = g_settings->getFloat("mouse_sensitivity");
+					d = rangelim(d, 0.01, 100.0);
+					camera_yaw -= dx*d;
+					camera_pitch += dy*d;
+					if(camera_pitch < -89.5) camera_pitch = -89.5;
+					if(camera_pitch > 89.5) camera_pitch = 89.5;
 				
-				turn_amount = v2f(dx, dy).getLength() * d;
+					turn_amount = v2f(dx, dy).getLength() * d;
+				} else {
+					s32 dx = 0, dy = 0;
+					if(input->getLeftState() &&
+						input->getMousePos().X >= rpadbase.X && input->getMousePos().X < rpadbase.X+rpadsize &&
+						input->getMousePos().Y >= rpadbase.Y && input->getMousePos().Y < rpadbase.Y+rpadsize)
+					{
+						dx = input->getMousePos().X - (rpadbase.X + (rpadsize/2.0));
+						dy = input->getMousePos().Y - (rpadbase.Y + (rpadsize/2.0));
+						lmouse_handled = true;
+					}
+					if(invert_mouse)
+						dy = -dy;
+
+					float d = g_settings->getFloat("mouse_sensitivity");
+					d = rangelim(d, 0.01, 100.0);
+					camera_yaw -= dx*d;
+					camera_pitch += dy*d;
+					if(camera_pitch < -89.5) camera_pitch = -89.5;
+					if(camera_pitch > 89.5) camera_pitch = 89.5;
+
+					turn_amount = v2f(dx, dy).getLength() * d;
+				}
 			}
-			input->setMousePos(displaycenter.X, displaycenter.Y);
+			if(!g_settings->getBool("touchscreen"))
+				input->setMousePos(displaycenter.X, displaycenter.Y);
 		}
 		else{
 			// Mac OSX gets upset if this is set every frame
@@ -2318,17 +2355,18 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				camera_yaw
 			);
 			client.setPlayerControl(control);
+			u32 keyPressed=
+			1*(int)input->isKeyDown(getKeySetting("keymap_forward"))+
+			2*(int)input->isKeyDown(getKeySetting("keymap_backward"))+
+			4*(int)input->isKeyDown(getKeySetting("keymap_left"))+
+			8*(int)input->isKeyDown(getKeySetting("keymap_right"))+
+			16*(int)input->isKeyDown(getKeySetting("keymap_jump"))+
+			32*(int)input->isKeyDown(getKeySetting("keymap_special1"))+
+			64*(int)input->isKeyDown(getKeySetting("keymap_sneak"))+
+			128*(int)input->getLeftState()+
+			256*(int)input->getRightState();
 			LocalPlayer* player = client.getEnv().getLocalPlayer();
-			player->keyPressed=
-			(((int)input->isKeyDown(getKeySetting("keymap_forward"))  & 0x1) << 0) |
-			(((int)input->isKeyDown(getKeySetting("keymap_backward")) & 0x1) << 1) |
-			(((int)input->isKeyDown(getKeySetting("keymap_left"))     & 0x1) << 2) |
-			(((int)input->isKeyDown(getKeySetting("keymap_right"))    & 0x1) << 3) |
-			(((int)input->isKeyDown(getKeySetting("keymap_jump"))     & 0x1) << 4) |
-			(((int)input->isKeyDown(getKeySetting("keymap_special1")) & 0x1) << 5) |
-			(((int)input->isKeyDown(getKeySetting("keymap_sneak"))    & 0x1) << 6) |
-			(((int)input->getLeftState()  & 0x1) << 7) |
-			(((int)input->getRightState() & 0x1) << 8);
+			player->keyPressed=keyPressed;
 		}
 
 		/*
@@ -2760,7 +2798,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		*/
 		if(digging)
 		{
-			if(input->getLeftReleased())
+			if(input->getLeftReleased() && !lmouse_handled)
 			{
 				infostream<<"Left button released"
 					<<" (stopped digging)"<<std::endl;
@@ -2833,7 +2871,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 			*/
 			
 			if(nodig_delay_timer <= 0.0 && input->getLeftState()
-					&& client.checkPrivilege("interact"))
+					&& client.checkPrivilege("interact") && !lmouse_handled)
 			{
 				if(!digging)
 				{
@@ -3046,7 +3084,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 			}
 
 			//if(input->getLeftClicked())
-			if(input->getLeftState())
+			if(input->getLeftState() && !lmouse_handled)
 			{
 				bool do_punch = false;
 				bool do_punch_damage = false;
@@ -3080,7 +3118,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				client.interact(3, pointed);  // place
 			}
 		}
-		else if(input->getLeftState())
+		else if(input->getLeftState() && !lmouse_handled)
 		{
 			// When button is held down in air, show continuous animation
 			left_punch = true;
@@ -3088,7 +3126,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 
 		pointed_old = pointed;
 		
-		if(left_punch || input->getLeftClicked())
+		if((left_punch || input->getLeftClicked()) && !lmouse_handled)
 		{
 			camera.setDigging(0); // left click animation
 		}
@@ -3558,6 +3596,20 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 
 		//timer10.stop();
 		//TimeTaker //timer11("//timer11");
+
+		/*
+			Draw touchscreen controls
+		*/
+		if(g_settings->getBool("touchscreen"))
+		{
+			driver->draw2DRectangle(video::SColor(128,255,255,255),
+				core::rect<s32>(rpadbase.X,rpadbase.Y,rpadbase.X+rpadsize,rpadbase.Y+rpadsize),
+				NULL);
+			driver->draw2DRectangle(video::SColor(255,255,0,0),
+				core::rect<s32>(rpadbase.X+(rpadsize/2.0)-1,rpadbase.Y+(rpadsize/2.0)-1,
+				rpadbase.X+(rpadsize/2.0)+1,rpadbase.Y+(rpadsize/2.0)+1),
+				NULL);
+		}
 
 
 		/*

@@ -146,6 +146,10 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("repeat_rightclick_time", "0.25");
 	settings->setDefault("enable_particles", "true");
 
+	settings->setDefault("touchscreen", "false");
+	settings->setDefault("touchscreen_rpad_size", "175");
+	settings->setDefault("touchscreen_rpad_margindiv", "8.0");
+
 	settings->setDefault("curl_timeout", "5000");
 	settings->setDefault("curl_parallel_limit", "8");
 
@@ -282,7 +286,9 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("screenH", "540");
 	settings->setDefault("fullscreen", "true");
 	settings->setDefault("video_driver", "ogles1");
-	settings->setDefault("mouse_sensitivity", "0.2");
+	settings->setDefault("mouse_sensitivity", "0.05");
+	settings->setDefault("touchscreen", "true");
+	
 #endif
 }
 
