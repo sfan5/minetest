@@ -1615,12 +1615,14 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		Touchscreen controls
 	*/
 
-	u16 rpadsize = g_settings->getU16("touchscreen_rpad_size");
+	u16 rpadsize = (screensize.X+g_settings->getU16("touchscreen_rpad_sizeadd"))
+		/ g_settings->getU16("touchscreen_rpad_sizediv");
 	float rmargindiv = g_settings->getFloat("touchscreen_rpad_margindiv");
 	v2f rpadbase = v2f(
 		screensize.X-rpadsize-(screensize.X/rmargindiv),
 		screensize.Y-rpadsize-(screensize.Y/rmargindiv));
-	u16 lpadsize = g_settings->getU16("touchscreen_lpad_size");
+	u16 lpadsize = (screensize.X+g_settings->getU16("touchscreen_lpad_sizeadd"))
+		/ g_settings->getU16("touchscreen_lpad_sizediv");
 	float lmargindiv = g_settings->getFloat("touchscreen_lpad_margindiv");
 	v2f lpadbase = v2f(
 		screensize.X/lmargindiv,
