@@ -3669,7 +3669,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 			driver->draw2DRectangle(video::SColor(128,255,255,255),
 				core::rect<s32>(lpadbase.X,lpadbase.Y,lpadbase.X+lpadsize,lpadbase.Y+lpadsize),
 				NULL);
-			driver->draw2DRectangle(video::SColor(255,255,0,0),
+			driver->draw2DRectangle(video::SColor(255,0,0,255),
 				core::rect<s32>(lpadbase.X+(lpadsize/2.0)-1,lpadbase.Y+(lpadsize/2.0)-1,
 				lpadbase.X+(lpadsize/2.0)+1,lpadbase.Y+(lpadsize/2.0)+1),
 				NULL);
