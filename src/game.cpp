@@ -1620,6 +1620,11 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 	v2f rpadbase = v2f(
 		screensize.X-rpadsize-(screensize.X/rmargindiv),
 		screensize.Y-rpadsize-(screensize.Y/rmargindiv));
+	u16 lpadsize = g_settings->getU16("touchscreen_lpad_size");
+	float lmargindiv = g_settings->getFloat("touchscreen_lpad_margindiv");
+	v2f lpadbase = v2f(
+		screensize.X/lmargindiv,
+		screensize.Y-lpadsize-(screensize.Y/lmargindiv));
 
 	/*
 		Shader constants
@@ -2341,32 +2346,84 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 			bool a_RMB,
 			float a_pitch,
 			float a_yaw*/
-			PlayerControl control(
-				input->isKeyDown(getKeySetting("keymap_forward")),
-				input->isKeyDown(getKeySetting("keymap_backward")),
-				input->isKeyDown(getKeySetting("keymap_left")),
-				input->isKeyDown(getKeySetting("keymap_right")),
-				input->isKeyDown(getKeySetting("keymap_jump")),
-				input->isKeyDown(getKeySetting("keymap_special1")),
-				input->isKeyDown(getKeySetting("keymap_sneak")),
-				input->getLeftState(),
-				input->getRightState(),
-				camera_pitch,
-				camera_yaw
-			);
+			u32 keyPressed;
+			PlayerControl control;
+			if(!g_settings->getBool("touchscreen")) {
+				control = *new PlayerControl(
+					input->isKeyDown(getKeySetting("keymap_forward")),
+					input->isKeyDown(getKeySetting("keymap_backward")),
+					input->isKeyDown(getKeySetting("keymap_left")),
+					input->isKeyDown(getKeySetting("keymap_right")),
+					input->isKeyDown(getKeySetting("keymap_jump")),
+					input->isKeyDown(getKeySetting("keymap_special1")),
+					input->isKeyDown(getKeySetting("keymap_sneak")),
+					input->getLeftState(),
+					input->getRightState(),
+					camera_pitch,
+					camera_yaw
+				);
+
+				keyPressed=
+				1*(int)input->isKeyDown(getKeySetting("keymap_forward"))+
+				2*(int)input->isKeyDown(getKeySetting("keymap_backward"))+
+				4*(int)input->isKeyDown(getKeySetting("keymap_left"))+
+				8*(int)input->isKeyDown(getKeySetting("keymap_right"))+
+				16*(int)input->isKeyDown(getKeySetting("keymap_jump"))+
+				32*(int)input->isKeyDown(getKeySetting("keymap_special1"))+
+				64*(int)input->isKeyDown(getKeySetting("keymap_sneak"))+
+				128*(int)input->getLeftState()+
+				256*(int)input->getRightState();
+			} else {
+				s16 cx = 0, cy = 0;
+				if(input->getLeftState() &&
+					input->getMousePos().X >= lpadbase.X && input->getMousePos().X < lpadbase.X+lpadsize &&
+					input->getMousePos().Y >= lpadbase.Y && input->getMousePos().Y < lpadbase.Y+lpadsize)
+				{
+					cx = input->getMousePos().X - (lpadbase.X + (lpadsize/2.0));
+					cy = input->getMousePos().Y - (lpadbase.Y + (lpadsize/2.0));
+					lmouse_handled = true;
+				}
+				bool c_fwd = false,
+					c_bwd = false,
+					c_left = false,
+					c_right = false;
+				if(cy < 0)
+					c_fwd = true;
+				if(cy > 0)
+					c_bwd = true;
+				if(cx < 0)
+					c_left = true;
+				if(cx > 0)
+					c_right = true;
+
+				control = *new PlayerControl(
+					c_fwd,
+					c_bwd,
+					c_left,
+					c_right,
+					input->isKeyDown(getKeySetting("keymap_jump")),
+					input->isKeyDown(getKeySetting("keymap_special1")),
+					input->isKeyDown(getKeySetting("keymap_sneak")),
+					input->getLeftState() && !lmouse_handled,
+					input->getRightState(),
+					camera_pitch,
+					camera_yaw
+				);
+
+				keyPressed = 
+				1*(int)c_fwd+
+				2*(int)c_bwd+
+				4*(int)c_left+
+				8*(int)c_right+
+				16*(int)input->isKeyDown(getKeySetting("keymap_jump"))+
+				32*(int)input->isKeyDown(getKeySetting("keymap_special1"))+
+				64*(int)input->isKeyDown(getKeySetting("keymap_sneak"))+
+				128*(int)(input->getLeftState() && !lmouse_handled)+
+				256*(int)input->getRightState();
+			}
 			client.setPlayerControl(control);
-			u32 keyPressed=
-			1*(int)input->isKeyDown(getKeySetting("keymap_forward"))+
-			2*(int)input->isKeyDown(getKeySetting("keymap_backward"))+
-			4*(int)input->isKeyDown(getKeySetting("keymap_left"))+
-			8*(int)input->isKeyDown(getKeySetting("keymap_right"))+
-			16*(int)input->isKeyDown(getKeySetting("keymap_jump"))+
-			32*(int)input->isKeyDown(getKeySetting("keymap_special1"))+
-			64*(int)input->isKeyDown(getKeySetting("keymap_sneak"))+
-			128*(int)input->getLeftState()+
-			256*(int)input->getRightState();
 			LocalPlayer* player = client.getEnv().getLocalPlayer();
-			player->keyPressed=keyPressed;
+			player->keyPressed = keyPressed;
 		}
 
 		/*
@@ -3608,6 +3665,13 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 			driver->draw2DRectangle(video::SColor(255,255,0,0),
 				core::rect<s32>(rpadbase.X+(rpadsize/2.0)-1,rpadbase.Y+(rpadsize/2.0)-1,
 				rpadbase.X+(rpadsize/2.0)+1,rpadbase.Y+(rpadsize/2.0)+1),
+				NULL);
+			driver->draw2DRectangle(video::SColor(128,255,255,255),
+				core::rect<s32>(lpadbase.X,lpadbase.Y,lpadbase.X+lpadsize,lpadbase.Y+lpadsize),
+				NULL);
+			driver->draw2DRectangle(video::SColor(255,255,0,0),
+				core::rect<s32>(lpadbase.X+(lpadsize/2.0)-1,lpadbase.Y+(lpadsize/2.0)-1,
+				lpadbase.X+(lpadsize/2.0)+1,lpadbase.Y+(lpadsize/2.0)+1),
 				NULL);
 		}
 
