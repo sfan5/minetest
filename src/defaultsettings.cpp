@@ -284,9 +284,9 @@ void set_default_settings(Settings *settings)
 
 	// Android
 #ifdef __ANDROID__
-	settings->setDefault("screenW", "960");
-	settings->setDefault("screenH", "540");
-	settings->setDefault("fullscreen", "true");
+	settings->setDefault("screenW", "0");
+	settings->setDefault("screenH", "0");
+	settings->setDefault("fullscreen", "false");
 	settings->setDefault("video_driver", "ogles1");
 	settings->setDefault("mouse_sensitivity", "0.05");
 	settings->setDefault("touchscreen", "true");
