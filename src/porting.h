@@ -87,6 +87,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#define strtoll(x, y, z) _strtoi64(x, y, z)
 	#define strtoull(x, y, z) _strtoui64(x, y, z)
 	#define strcasecmp(x, y) stricmp(x, y)
+	#define strncasecmp(x, y, n) strnicmp(x, y, n)
 #else
 	#define ALIGNOF(x) __alignof__(x)
 #endif
@@ -147,6 +148,12 @@ bool threadBindToProcessor(threadid_t tid, int pnumber);
 	Set a thread's priority.
 */
 bool threadSetPriority(threadid_t tid, int prio);
+
+/*
+	Return system information
+	e.g. "Linux/3.12.7 x86_64"
+*/
+std::string get_sysinfo();
 
 /*
 	Resolution is 10-20ms.

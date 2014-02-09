@@ -78,6 +78,7 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("wanted_fps", "30");
 	settings->setDefault("fps_max", "60");
+	settings->setDefault("pause_fps_max", "20");
 	// A bit more than the server will send around the player, to make fog blend well
 	settings->setDefault("viewing_range_nodes_max", "240");
 	settings->setDefault("viewing_range_nodes_min", "35");
@@ -178,7 +179,10 @@ void set_default_settings(Settings *settings)
 
 	// Server stuff
 	// "map-dir" doesn't exist by default.
+	settings->setDefault("workaround_window_size","5");
+	settings->setDefault("max_packets_per_iteration","1024");
 	settings->setDefault("port", "30000");
+	settings->setDefault("bind_address","");
 	settings->setDefault("default_game", "minetest");
 	settings->setDefault("motd", "");
 	settings->setDefault("max_users", "15");
@@ -195,8 +199,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("disallow_empty_password", "false");
 	settings->setDefault("disable_anticheat", "false");
 	settings->setDefault("enable_rollback_recording", "false");
-	settings->setDefault("cache_block_before_spawn", "true");
-	settings->setDefault("max_spawn_height", "50");
 
 	settings->setDefault("profiler_print_interval", "0");
 	settings->setDefault("enable_mapgen_debug_info", "false");
@@ -204,8 +206,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("active_block_range", "2");
 	//settings->setDefault("max_simultaneous_block_sends_per_client", "1");
 	// This causes frametime jitter on client side, or does it?
-	settings->setDefault("max_simultaneous_block_sends_per_client", "4");
-	settings->setDefault("max_simultaneous_block_sends_server_total", "20");
+	settings->setDefault("max_simultaneous_block_sends_per_client", "10");
+	settings->setDefault("max_simultaneous_block_sends_server_total", "40");
 	settings->setDefault("max_block_send_distance", "9");
 	settings->setDefault("max_block_generate_distance", "7");
 	settings->setDefault("max_clearobjects_extra_loaded_blocks", "4096");
@@ -225,8 +227,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("remote_media", "");
 	settings->setDefault("debug_log_level", "2");
 	settings->setDefault("emergequeue_limit_total", "256");
-	settings->setDefault("emergequeue_limit_diskonly", "");
-	settings->setDefault("emergequeue_limit_generate", "");
+	settings->setDefault("emergequeue_limit_diskonly", "32");
+	settings->setDefault("emergequeue_limit_generate", "32");
 	settings->setDefault("num_emerge_threads", "1");
 	
 	// physics stuff
@@ -256,41 +258,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("mg_name", "v6");
 	settings->setDefault("water_level", "1");
 	settings->setDefault("chunksize", "5");
-	settings->setDefault("mg_flags", "trees, caves, v6_biome_blend");
-	settings->setDefault("mgv6_freq_desert", "0.45");
-	settings->setDefault("mgv6_freq_beach", "0.15");
-
-	settings->setDefault("mgv6_np_terrain_base",   "-4, 20, (250, 250, 250), 82341, 5, 0.6");
-	settings->setDefault("mgv6_np_terrain_higher", "20, 16, (500, 500, 500), 85039, 5, 0.6");
-	settings->setDefault("mgv6_np_steepness",      "0.85, 0.5, (125, 125, 125), -932, 5, 0.7");
-	settings->setDefault("mgv6_np_height_select",  "0.5, 1, (250, 250, 250), 4213, 5, 0.69");
-	settings->setDefault("mgv6_np_mud",            "4, 2, (200, 200, 200), 91013, 3, 0.55");
-	settings->setDefault("mgv6_np_beach",          "0, 1, (250, 250, 250), 59420, 3, 0.50");
-	settings->setDefault("mgv6_np_biome",          "0, 1, (250, 250, 250), 9130, 3, 0.50");
-	settings->setDefault("mgv6_np_cave",           "6, 6, (250, 250, 250), 34329, 3, 0.50");
-	settings->setDefault("mgv6_np_humidity",       "0.5, 0.5, (500, 500, 500), 72384, 4, 0.66");
-	settings->setDefault("mgv6_np_trees",          "0, 1, (125, 125, 125), 2, 4, 0.66");
-	settings->setDefault("mgv6_np_apple_trees",    "0, 1, (100, 100, 100), 342902, 3, 0.45");
-
-	settings->setDefault("mgv7_np_terrain_base",     "4, 70, (300, 300, 300), 82341, 6, 0.7");
-	settings->setDefault("mgv7_np_terrain_alt",      "4, 25, (600, 600, 600), 5934, 5, 0.6");
-	settings->setDefault("mgv7_np_terrain_persist",  "0.6, 0.1, (500, 500, 500), 539, 3, 0.6");
-	settings->setDefault("mgv7_np_height_select",    "-0.5, 1, (250, 250, 250), 4213, 5, 0.69");
-	settings->setDefault("mgv7_np_filler_depth",     "0, 1.2, (150, 150, 150), 261, 4, 0.7");
-	settings->setDefault("mgv7_np_mount_height",     "100, 30, (500, 500, 500), 72449, 4, 0.6");
-	settings->setDefault("mgv7_np_ridge_uwater",     "0, 1, (500, 500, 500), 85039, 4, 0.6");
-	settings->setDefault("mgv7_np_mountain",         "0, 1, (250, 350, 250), 5333, 5, 0.68");
-	settings->setDefault("mgv7_np_ridge",            "0, 1, (100, 120, 100), 6467, 4, 0.75");
-
-	settings->setDefault("mgindev_np_terrain_base",   "-4,   20,  (250, 250, 250), 82341, 5, 0.6,  10,  10");
-	settings->setDefault("mgindev_np_terrain_higher", "20,   16,  (500, 500, 500), 85039, 5, 0.6,  10,  10");
-	settings->setDefault("mgindev_np_steepness",      "0.85, 0.5, (125, 125, 125), -932,  5, 0.7,  2,   10");
-	settings->setDefault("mgindev_np_mud",            "4,    2,   (200, 200, 200), 91013, 3, 0.55, 1,   1");
-	settings->setDefault("mgindev_np_float_islands1", "0,    1,   (256, 256, 256), 3683,  6, 0.6,  1,   1.5");
-	settings->setDefault("mgindev_np_float_islands2", "0,    1,   (8,   8,   8  ), 9292,  2, 0.5,  1,   1.5");
-	settings->setDefault("mgindev_np_float_islands3", "0,    1,   (256, 256, 256), 6412,  2, 0.5,  1,   0.5");
-	settings->setDefault("mgindev_np_biome",          "0,    1,   (250, 250, 250), 9130,  3, 0.50, 1,   10");
-	settings->setDefault("mgindev_float_islands", "500");
+	settings->setDefault("mg_flags", "");
 
 	settings->setDefault("mgmath_generator", "mandelbox");
 

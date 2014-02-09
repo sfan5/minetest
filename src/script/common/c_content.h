@@ -121,7 +121,7 @@ int                getenumfield              (lua_State *L,
 
 u32                getflagsfield             (lua_State *L, int table,
                                               const char *fieldname,
-                                              FlagDesc *flagdesc);
+                                              FlagDesc *flagdesc, u32 *flagmask);
 
 void               push_items                (lua_State *L,
                                               const std::vector<ItemStack> &items);
@@ -150,9 +150,10 @@ void               luaentity_get             (lua_State *L,u16 id);
 bool               push_json_value           (lua_State *L,
                                               const Json::Value &value,
                                               int nullindex);
-void               get_json_value            (lua_State *L,
+void               read_json_value           (lua_State *L,
                                               Json::Value &root,
-                                              int index);
+                                              int index,
+                                              u8 recursion = 0);
 
 extern struct EnumString es_TileAnimationType[];
 

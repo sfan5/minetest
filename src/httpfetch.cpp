@@ -18,7 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "socket.h" // for select()
-#include "porting.h" // for sleep_ms()
+#include "porting.h" // for sleep_ms(), get_sysinfo()
 #include "httpfetch.h"
 #include <iostream>
 #include <sstream>
@@ -32,9 +32,24 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "log.h"
 #include "util/container.h"
 #include "util/thread.h"
+#include "version.h"
+#include "main.h"
+#include "settings.h"
 
 JMutex g_httpfetch_mutex;
 std::map<unsigned long, std::list<HTTPFetchResult> > g_httpfetch_results;
+
+HTTPFetchRequest::HTTPFetchRequest()
+{
+	url = "";
+	caller = HTTPFETCH_DISCARD;
+	request_id = 0;
+	timeout = g_settings->getS32("curl_timeout");
+	connect_timeout = timeout * 5;
+	
+	useragent = std::string("Minetest/") + minetest_version_hash + " (" + porting::get_sysinfo() + ")";
+}
+
 
 static void httpfetch_deliver_result(const HTTPFetchResult &fetchresult)
 {
@@ -523,7 +538,7 @@ protected:
 		if (select_timeout > 0) {
 			// in Winsock it is forbidden to pass three empty
 			// fd_sets to select(), so in that case use sleep_ms
-			if (max_fd == -1) {
+			if (max_fd != -1) {
 				select_tv.tv_sec = select_timeout / 1000;
 				select_tv.tv_usec = (select_timeout % 1000) * 1000;
 				int retval = select(max_fd + 1, &read_fd_set,
@@ -569,7 +584,7 @@ protected:
 			*/
 
 			while (!m_requests.empty()) {
-				Request req = m_requests.pop_front();
+				Request req = m_requests.pop_frontNoEx();
 				processRequest(req);
 			}
 			processQueued(&pool);

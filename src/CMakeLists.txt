@@ -308,6 +308,7 @@ set(common_SRCS
 	connection.cpp
 	environment.cpp
 	server.cpp
+	clientiface.cpp
 	socket.cpp
 	mapblock.cpp
 	mapsector.cpp
@@ -374,6 +375,7 @@ set(minetest_SRCS
 	guiMessageMenu.cpp
 	guiTextInputMenu.cpp
 	guiFormSpecMenu.cpp
+	guiTable.cpp
 	guiPauseMenu.cpp
 	guiPasswordChange.cpp
 	guiVolumeChange.cpp
@@ -603,9 +605,9 @@ if(WIN32)
 		if(VORBISFILE_DLL)
 			install(FILES ${VORBISFILE_DLL} DESTINATION ${BINDIR})
 		endif()
-		if(CURL_DLL)
-			install(FILES ${CURL_DLL} DESTINATION ${BINDIR})
-		endif()
+	endif()
+	if(CURL_DLL)
+		install(FILES ${CURL_DLL} DESTINATION ${BINDIR})
 	endif()
 endif()
 

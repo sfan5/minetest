@@ -118,7 +118,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define PASSWORD_SIZE 28       // Maximum password length. Allows for
                                // base64-encoded SHA-1 (27+\0).
 
-#define TEXTURENAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_."
+#define TEXTURENAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-"
 
 enum ToClientCommand
 {
@@ -419,6 +419,7 @@ enum ToClientCommand
 		f1000 expirationtime
 		f1000 size
 		u8 bool collisiondetection
+		u8 bool vertical
 		u32 len
 		u8[len] texture
 	*/
@@ -439,6 +440,7 @@ enum ToClientCommand
 		f1000 minsize
 		f1000 maxsize
 		u8 bool collisiondetection
+		u8 bool vertical
 		u32 len
 		u8[len] texture
 		u32 id
@@ -504,6 +506,25 @@ enum ToClientCommand
 	/*
 		u16 command
 		u16 breath
+	*/
+
+	TOCLIENT_SET_SKY = 0x4f,
+	/*
+		u16 command
+		u8[4] color (ARGB)
+		u8 len
+		u8[len] type
+		u16 count
+		foreach count:
+			u8 len
+			u8[len] param
+	*/
+
+	TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO = 0x50,
+	/*
+		u16 command
+		u8 do_override (boolean)
+		u16 day-night ratio 0...65535
 	*/
 };
 

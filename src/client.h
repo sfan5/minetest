@@ -133,7 +133,9 @@ enum ClientEventType
 	CE_DELETE_PARTICLESPAWNER,
 	CE_HUDADD,
 	CE_HUDRM,
-	CE_HUDCHANGE
+	CE_HUDCHANGE,
+	CE_SET_SKY,
+	CE_OVERRIDE_DAY_NIGHT_RATIO,
 };
 
 struct ClientEvent
@@ -168,6 +170,7 @@ struct ClientEvent
 			f32 expirationtime;
 			f32 size;
 			bool collisiondetection;
+			bool vertical;
 			std::string *texture;
 		} spawn_particle;
 		struct{
@@ -184,6 +187,7 @@ struct ClientEvent
 			f32 minsize;
 			f32 maxsize;
 			bool collisiondetection;
+			bool vertical;
 			std::string *texture;
 			u32 id;
 		} add_particlespawner;
@@ -202,6 +206,7 @@ struct ClientEvent
 			u32 dir;
 			v2f *align;
 			v2f *offset;
+			v3f *world_pos;
 		} hudadd;
 		struct{
 			u32 id;
@@ -212,7 +217,17 @@ struct ClientEvent
 			v2f *v2fdata;
 			std::string *sdata;
 			u32 data;
+			v3f *v3fdata;
 		} hudchange;
+		struct{
+			video::SColor *bgcolor;
+			std::string *type;
+			std::vector<std::string> *params;
+		} set_sky;
+		struct{
+			bool do_override;
+			float ratio_f;
+		} override_day_night_ratio;
 	};
 };
 
@@ -289,6 +304,14 @@ public:
 	);
 	
 	~Client();
+
+	/*
+	 request all threads managed by client to be stopped
+	 */
+	void Stop();
+
+
+	bool isShutdown();
 	/*
 		The name of the local player should already be set when
 		calling this, as it is sent in the initialization.
@@ -360,9 +383,6 @@ public:
 			v3f from_pos_f_on_map,
 			core::line3d<f32> shootline_on_map
 	);
-
-	// Prints a line or two of info
-	void printDebugInfo(std::ostream &os);
 
 	std::list<std::string> getConnectedPlayerNames();
 

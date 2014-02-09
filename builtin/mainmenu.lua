@@ -178,7 +178,7 @@ function update_menu()
 	if gamedata.errormessage ~= nil then
 		formspec = "size[12,5.2]" ..
 			"textarea[1,2;10,2;;ERROR: " ..
-			gamedata.errormessage ..
+			engine.formspec_escape(gamedata.errormessage) ..
 			";]"..
 			"button[4.5,4.2;3,0.5;btn_error_confirm;" .. fgettext("Ok") .. "]"
 	else
@@ -210,12 +210,12 @@ end
 function menu.render_texture_pack_list(list)
 	local retval = ""
 
-	for i,v in ipairs(list) do
+	for i, v in ipairs(list) do
 		if retval ~= "" then
 			retval = retval ..","
 		end
 
-		retval = retval .. v
+		retval = retval .. engine.formspec_escape(v)
 	end
 
 	return retval
@@ -296,7 +296,7 @@ function menu.handle_key_up_down(fields,textlist,settingname)
 	if fields["key_up"] then
 		local oldidx = engine.get_textlist_index(textlist)
 
-		if oldidx > 1 then
+		if oldidx ~= nil and oldidx > 1 then
 			local newidx = oldidx -1
 			engine.setting_set(settingname,
 				filterlist.get_raw_index(worldlist,newidx))
@@ -306,7 +306,7 @@ function menu.handle_key_up_down(fields,textlist,settingname)
 	if fields["key_down"] then
 		local oldidx = engine.get_textlist_index(textlist)
 
-		if oldidx < filterlist.size(worldlist) then
+		if oldidx ~= nil and oldidx < filterlist.size(worldlist) then
 			local newidx = oldidx + 1
 			engine.setting_set(settingname,
 				filterlist.get_raw_index(worldlist,newidx))
@@ -392,7 +392,7 @@ function tabbuilder.handle_create_world_buttons(fields)
 		local worldname = fields["te_world_name"]
 		local gameindex = engine.get_textlist_index("games")
 
-		if gameindex > 0 and
+		if gameindex ~= nil and
 			worldname ~= "" then
 
 			local message = nil
@@ -459,8 +459,8 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 	end
 
 	if fields["favourites"] ~= nil then
-		local event = explode_textlist_event(fields["favourites"])
-		if event.typ == "DCL" then
+		local event = engine.explode_textlist_event(fields["favourites"])
+		if event.type == "DCL" then
 			if event.index <= #menu.favorites then
 				gamedata.address = menu.favorites[event.index].address
 				gamedata.port = menu.favorites[event.index].port
@@ -484,7 +484,7 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 			end
 		end
 
-		if event.typ == "CHG" then
+		if event.type == "CHG" then
 			if event.index <= #menu.favorites then
 				local address = menu.favorites[event.index].address
 				local port = menu.favorites[event.index].port
@@ -506,11 +506,13 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 
 		local fav_idx = engine.get_textlist_index("favourites")
 
-		if fields["key_up"] ~= nil and fav_idx > 1 then
-			fav_idx = fav_idx -1
-		else if fields["key_down"] and fav_idx < #menu.favorites then
-			fav_idx = fav_idx +1
-		end end
+		if fav_idx ~= nil then
+			if fields["key_up"] ~= nil and fav_idx > 1 then
+				fav_idx = fav_idx -1
+			else if fields["key_down"] and fav_idx < #menu.favorites then
+				fav_idx = fav_idx +1
+			end end
+		end
 
 		local address = menu.favorites[fav_idx].address
 		local port = menu.favorites[fav_idx].port
@@ -539,6 +541,7 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 
 	if fields["btn_delete_favorite"] ~= nil then
 		local current_favourite = engine.get_textlist_index("favourites")
+		if current_favourite == nil then return end
 		engine.delete_favorite(current_favourite)
 		menu.favorites = engine.get_favorites()
 		menu.fav_selected = nil
@@ -559,7 +562,7 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 
 		local fav_idx = engine.get_textlist_index("favourites")
 
-		if fav_idx > 0 and fav_idx <= #menu.favorites and
+		if fav_idx ~= nil and fav_idx <= #menu.favorites and
 			menu.favorites[fav_idx].address == fields["te_address"] and
 			menu.favorites[fav_idx].port    == fields["te_port"] then
 
@@ -586,12 +589,12 @@ function tabbuilder.handle_server_buttons(fields)
 	local world_doubleclick = false
 
 	if fields["srv_worlds"] ~= nil then
-		local event = explode_textlist_event(fields["srv_worlds"])
+		local event = engine.explode_textlist_event(fields["srv_worlds"])
 
-		if event.typ == "DCL" then
+		if event.type == "DCL" then
 			world_doubleclick = true
 		end
-		if event.typ == "CHG" then
+		if event.type == "CHG" then
 			engine.setting_set("mainmenu_last_selected_world",
 				filterlist.get_raw_index(worldlist,engine.get_textlist_index("srv_worlds")))
 		end
@@ -615,7 +618,7 @@ function tabbuilder.handle_server_buttons(fields)
 		world_doubleclick or
 		fields["key_enter"] then
 		local selected = engine.get_textlist_index("srv_worlds")
-		if selected > 0 then
+		if selected ~= nil then
 			gamedata.playername		= fields["te_playername"]
 			gamedata.password		= fields["te_passwd"]
 			gamedata.port			= fields["te_serverport"]
@@ -623,6 +626,9 @@ function tabbuilder.handle_server_buttons(fields)
 			gamedata.selected_world	= filterlist.get_raw_index(worldlist,selected)
 
 			engine.setting_set("port",gamedata.port)
+			if fields["te_serveraddr"] ~= nil then
+				engine.setting_set("bind_address",fields["te_serveraddr"])
+			end
 
 			menu.update_last_game(gamedata.selected_world)
 			engine.start()
@@ -637,7 +643,7 @@ function tabbuilder.handle_server_buttons(fields)
 
 	if fields["world_delete"] ~= nil then
 		local selected = engine.get_textlist_index("srv_worlds")
-		if selected > 0 and
+		if selected ~= nil and
 			selected <= filterlist.size(worldlist) then
 			local world = filterlist.get_list(worldlist)[selected]
 			if world ~= nil and
@@ -655,7 +661,7 @@ function tabbuilder.handle_server_buttons(fields)
 
 	if fields["world_configure"] ~= nil then
 		selected = engine.get_textlist_index("srv_worlds")
-		if selected > 0 then
+		if selected ~= nil then
 			modmgr.world_config_selected_world = filterlist.get_raw_index(worldlist,selected)
 			if modmgr.init_worldconfig() then
 				tabbuilder.current_tab = "dialog_configure_world"
@@ -737,13 +743,13 @@ function tabbuilder.handle_singleplayer_buttons(fields)
 	local world_doubleclick = false
 
 	if fields["sp_worlds"] ~= nil then
-		local event = explode_textlist_event(fields["sp_worlds"])
+		local event = engine.explode_textlist_event(fields["sp_worlds"])
 
-		if event.typ == "DCL" then
+		if event.type == "DCL" then
 			world_doubleclick = true
 		end
 
-		if event.typ == "CHG" then
+		if event.type == "CHG" then
 			engine.setting_set("mainmenu_last_selected_world",
 				filterlist.get_raw_index(worldlist,engine.get_textlist_index("sp_worlds")))
 		end
@@ -763,7 +769,7 @@ function tabbuilder.handle_singleplayer_buttons(fields)
 		world_doubleclick or
 		fields["key_enter"] then
 		local selected = engine.get_textlist_index("sp_worlds")
-		if selected > 0 then
+		if selected ~= nil then
 			gamedata.selected_world	= filterlist.get_raw_index(worldlist,selected)
 			gamedata.singleplayer	= true
 
@@ -781,7 +787,7 @@ function tabbuilder.handle_singleplayer_buttons(fields)
 
 	if fields["world_delete"] ~= nil then
 		local selected = engine.get_textlist_index("sp_worlds")
-		if selected > 0 and
+		if selected ~= nil and
 			selected <= filterlist.size(worldlist) then
 			local world = filterlist.get_list(worldlist)[selected]
 			if world ~= nil and
@@ -799,7 +805,7 @@ function tabbuilder.handle_singleplayer_buttons(fields)
 
 	if fields["world_configure"] ~= nil then
 		selected = engine.get_textlist_index("sp_worlds")
-		if selected > 0 then
+		if selected ~= nil then
 			modmgr.world_config_selected_world = filterlist.get_raw_index(worldlist,selected)
 			if modmgr.init_worldconfig() then
 				tabbuilder.current_tab = "dialog_configure_world"
@@ -813,14 +819,14 @@ end
 --------------------------------------------------------------------------------
 function tabbuilder.handle_texture_pack_buttons(fields)
 	if fields["TPs"] ~= nil then
-		local event = explode_textlist_event(fields["TPs"])
-		if event.typ == "CHG" or event.typ=="DCL" then
+		local event = engine.explode_textlist_event(fields["TPs"])
+		if event.type == "CHG" or event.type == "DCL" then
 			local index = engine.get_textlist_index("TPs")
 			engine.setting_set("mainmenu_last_selected_TP",
 				index)
 			local list = filter_texture_pack_list(engine.get_dirlist(engine.get_texturepath(), true))
 			local current_index = engine.get_textlist_index("TPs")
-			if #list >= current_index then
+			if current_index ~= nil and #list >= current_index then
 				local new_path = engine.get_texturepath()..DIR_DELIM..list[current_index]
 				if list[current_index] == "None" then new_path = "" end
 
@@ -947,11 +953,24 @@ function tabbuilder.tab_server()
 		dump(engine.setting_getbool("enable_damage")) .. "]"..
 		"checkbox[0.5,1.15;cb_server_announce;".. fgettext("Public") .. ";" ..
 		dump(engine.setting_getbool("server_announce")) .. "]"..
-		"field[0.8,3.2;3,0.5;te_playername;".. fgettext("Name") .. ";" ..
+		"field[0.8,3.2;3.5,0.5;te_playername;".. fgettext("Name") .. ";" ..
 		engine.setting_get("name") .. "]" ..
-		"pwdfield[0.8,4.2;3,0.5;te_passwd;".. fgettext("Password") .. "]" ..
-		"field[0.8,5.2;3,0.5;te_serverport;".. fgettext("Server Port") .. ";" ..
-		engine.setting_get("port") .."]" ..
+		"pwdfield[0.8,4.2;3.5,0.5;te_passwd;".. fgettext("Password") .. "]"
+		
+	local bind_addr = engine.setting_get("bind_address")
+	if bind_addr ~= nil and bind_addr ~= "" then
+		retval = retval ..
+			"field[0.8,5.2;2.25,0.5;te_serveraddr;".. fgettext("Bind Address") .. ";" ..
+			engine.setting_get("bind_address") .."]" ..
+			"field[3.05,5.2;1.25,0.5;te_serverport;".. fgettext("Port") .. ";" ..
+			engine.setting_get("port") .."]"
+	else
+		retval = retval ..
+			"field[0.8,5.2;3.5,0.5;te_serverport;".. fgettext("Server Port") .. ";" ..
+			engine.setting_get("port") .."]"
+	end
+	
+	retval = retval ..
 		"textlist[4,0.25;7.5,3.7;srv_worlds;" ..
 		menu.render_world_list() ..
 		";" .. index .. "]"

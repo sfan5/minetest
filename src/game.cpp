@@ -1031,7 +1031,7 @@ public:
 		services->setVertexShaderConstant("animationTimer", &animation_timer_f, 1);
 
 		LocalPlayer* player = m_client->getEnv().getLocalPlayer();
-		v3f eye_position = player->getEyePosition(); 
+		v3f eye_position = player->getEyePosition();
 		services->setPixelShaderConstant("eyePosition", (irr::f32*)&eye_position, 3);
 		services->setVertexShaderConstant("eyePosition", (irr::f32*)&eye_position, 3);
 
@@ -1123,9 +1123,20 @@ bool nodePlacementPrediction(Client &client,
 		// Add node to client map
 		MapNode n(id, 0, param2);
 		try{
-			// This triggers the required mesh update too
-			client.addNode(p, n);
-			return true;
+			LocalPlayer* player = client.getEnv().getLocalPlayer();
+
+			// Dont place node when player would be inside new node
+			// NOTE: This is to be eventually implemented by a mod as client-side Lua
+			if (!nodedef->get(n).walkable ||
+				(client.checkPrivilege("noclip") && g_settings->getBool("noclip")) ||
+				(nodedef->get(n).walkable &&
+				neighbourpos != player->getStandingNodePos() + v3s16(0,1,0) &&
+				neighbourpos != player->getStandingNodePos() + v3s16(0,2,0))) {
+
+					// This triggers the required mesh update too
+					client.addNode(p, n);
+					return true;
+				}
 		}catch(InvalidPositionException &e){
 			errorstream<<"Node placement prediction failed for "
 					<<playeritem_def.name<<" (places "
@@ -1236,7 +1247,27 @@ void the_game(
 		infostream<<"Creating server"<<std::endl;
 		server = new Server(map_dir, gamespec,
 				simple_singleplayer_mode);
-		server->start(port);
+
+		std::string bind_str = g_settings->get("bind_address");
+		Address bind_addr(0,0,0,0, port);
+
+		if (bind_str != "")
+		{
+			try {
+				bind_addr.Resolve(bind_str.c_str());
+				address = bind_str;
+			} catch (ResolveError &e) {
+				infostream << "Resolving bind address \"" << bind_str
+						   << "\" failed: " << e.what()
+						   << " -- Listening on all addresses." << std::endl;
+
+				if (g_settings->getBool("ipv6_server")) {
+					bind_addr.setAddress((IPv6AddressBytes*) NULL);
+				}
+			}
+		}
+
+		server->start(bind_addr);
 	}
 
 	do{ // Client scope (breakable do-while(0))
@@ -1544,6 +1575,8 @@ void the_game(
 
 	Sky *sky = NULL;
 	sky = new Sky(smgr->getRootSceneNode(), smgr, -1, client.getEnv().getLocalPlayer());
+
+	scene::ISceneNode* skybox = NULL;
 	
 	/*
 		A copy of the local inventory
@@ -1714,7 +1747,7 @@ void the_game(
 	/*
 		HUD object
 	*/
-	Hud hud(driver, guienv, font, text_height,
+	Hud hud(driver, smgr, guienv, font, text_height,
 			gamedef, player, &local_inventory);
 
 	bool use_weather = g_settings->getBool("weather");
@@ -1723,6 +1756,9 @@ void the_game(
 	str += driver->getName();
 	str += "]";
 	device->setWindowCaption(str.c_str());
+
+	// Info text
+	std::wstring infotext;
 
 	for(;;)
 	{
@@ -1752,7 +1788,9 @@ void the_game(
 		*/
 
 		{
-			float fps_max = g_settings->getFloat("fps_max");
+			float fps_max = g_menumgr.pausesGame() ?
+					g_settings->getFloat("pause_fps_max") :
+					g_settings->getFloat("fps_max");
 			u32 frametime_min = 1000./fps_max;
 			
 			if(busytime_u32 < frametime_min)
@@ -1904,23 +1942,9 @@ void the_game(
 		
 		// Hilight boxes collected during the loop and displayed
 		std::vector<aabb3f> hilightboxes;
-		
-		// Info text
-		std::wstring infotext;
 
-		/*
-			Debug info for client
-		*/
-		{
-			static float counter = 0.0;
-			counter -= dtime;
-			if(counter < 0)
-			{
-				counter = 30.0;
-				client.printDebugInfo(infostream);
-			}
-		}
-
+		/* reset infotext */
+		infotext = L"";
 		/*
 			Profiler
 		*/
@@ -2236,12 +2260,12 @@ void the_game(
 		}
 		else if(input->wasKeyDown(getKeySetting("keymap_screenshot")))
 		{
-			irr::video::IImage* const image = driver->createScreenShot(); 
-			if (image) { 
-				irr::c8 filename[256]; 
-				snprintf(filename, 256, "%s" DIR_DELIM "screenshot_%u.png", 
+			irr::video::IImage* const image = driver->createScreenShot();
+			if (image) {
+				irr::c8 filename[256];
+				snprintf(filename, 256, "%s" DIR_DELIM "screenshot_%u.png",
 						 g_settings->get("screenshot_path").c_str(),
-						 device->getTimer()->getRealTime()); 
+						 device->getTimer()->getRealTime());
 				if (driver->writeImageToFile(image, filename)) {
 					std::wstringstream sstr;
 					sstr<<"Saved screenshot to '"<<filename<<"'";
@@ -2251,8 +2275,8 @@ void the_game(
 				} else{
 					infostream<<"Failed to save screenshot '"<<filename<<"'"<<std::endl;
 				}
-				image->drop(); 
-			}			 
+				image->drop();
+			}
 		}
 		else if(input->wasKeyDown(getKeySetting("keymap_toggle_hud")))
 		{
@@ -2596,25 +2620,28 @@ void the_game(
 			LocalPlayer* player = client.getEnv().getLocalPlayer();
 			player->keyPressed=keyPressed;
 		}
-		
-		/*
-			Run server
-		*/
 
-		if(server != NULL)
+		/*
+			Run server, client (and process environments)
+		*/
+		bool can_be_and_is_paused =
+				(simple_singleplayer_mode && g_menumgr.pausesGame());
+		if(can_be_and_is_paused)
 		{
-			//TimeTaker timer("server->step(dtime)");
-			server->step(dtime);
+			// No time passes
+			dtime = 0;
 		}
-
-		/*
-			Process environment
-		*/
-		
+		else
 		{
-			//TimeTaker timer("client.step(dtime)");
-			client.step(dtime);
-			//client.step(dtime_avg1);
+			if(server != NULL)
+			{
+				//TimeTaker timer("server->step(dtime)");
+				server->step(dtime);
+			}
+			{
+				//TimeTaker timer("client.step(dtime)");
+				client.step(dtime);
+			}
 		}
 
 		{
@@ -2662,7 +2689,7 @@ void the_game(
 							new MainRespawnInitiator(
 									&respawn_menu_active, &client);
 					GUIDeathScreen *menu =
-							new GUIDeathScreen(guienv, guiroot, -1, 
+							new GUIDeathScreen(guienv, guiroot, -1,
 								&g_menumgr, respawner);
 					menu->drop();
 					
@@ -2720,6 +2747,7 @@ void the_game(
 						 event.spawn_particle.expirationtime,
 						 event.spawn_particle.size,
 						 event.spawn_particle.collisiondetection,
+						 event.spawn_particle.vertical,
 						 texture,
 						 v2f(0.0, 0.0),
 						 v2f(1.0, 1.0));
@@ -2744,6 +2772,7 @@ void the_game(
 						 event.add_particlespawner.minsize,
 						 event.add_particlespawner.maxsize,
 						 event.add_particlespawner.collisiondetection,
+						 event.add_particlespawner.vertical,
 						 texture,
 						 event.add_particlespawner.id);
 				}
@@ -2762,6 +2791,7 @@ void the_game(
 						delete event.hudadd.text;
 						delete event.hudadd.align;
 						delete event.hudadd.offset;
+						delete event.hudadd.world_pos;
 						continue;
 					}
 					
@@ -2776,6 +2806,7 @@ void the_game(
 					e->dir    = event.hudadd.dir;
 					e->align  = *event.hudadd.align;
 					e->offset = *event.hudadd.offset;
+					e->world_pos = *event.hudadd.world_pos;
 					
 					if (id == nhudelem)
 						player->hud.push_back(e);
@@ -2788,6 +2819,7 @@ void the_game(
 					delete event.hudadd.text;
 					delete event.hudadd.align;
 					delete event.hudadd.offset;
+					delete event.hudadd.world_pos;
 				}
 				else if (event.type == CE_HUDRM)
 				{
@@ -2801,6 +2833,7 @@ void the_game(
 				{
 					u32 id = event.hudchange.id;
 					if (id >= player->hud.size() || !player->hud[id]) {
+						delete event.hudchange.v3fdata;
 						delete event.hudchange.v2fdata;
 						delete event.hudchange.sdata;
 						continue;
@@ -2835,10 +2868,54 @@ void the_game(
 						case HUD_STAT_OFFSET:
 							e->offset = *event.hudchange.v2fdata;
 							break;
+						case HUD_STAT_WORLD_POS:
+							e->world_pos = *event.hudchange.v3fdata;
+							break;
 					}
 					
+					delete event.hudchange.v3fdata;
 					delete event.hudchange.v2fdata;
 					delete event.hudchange.sdata;
+				}
+				else if (event.type == CE_SET_SKY)
+				{
+					sky->setVisible(false);
+					if(skybox){
+						skybox->drop();
+						skybox = NULL;
+					}
+					// Handle according to type
+					if(*event.set_sky.type == "regular"){
+						sky->setVisible(true);
+					}
+					else if(*event.set_sky.type == "skybox" &&
+							event.set_sky.params->size() == 6){
+						sky->setFallbackBgColor(*event.set_sky.bgcolor);
+						skybox = smgr->addSkyBoxSceneNode(
+								tsrc->getTexture((*event.set_sky.params)[0]),
+								tsrc->getTexture((*event.set_sky.params)[1]),
+								tsrc->getTexture((*event.set_sky.params)[2]),
+								tsrc->getTexture((*event.set_sky.params)[3]),
+								tsrc->getTexture((*event.set_sky.params)[4]),
+								tsrc->getTexture((*event.set_sky.params)[5]));
+					}
+					// Handle everything else as plain color
+					else {
+						if(*event.set_sky.type != "plain")
+							infostream<<"Unknown sky type: "
+									<<(*event.set_sky.type)<<std::endl;
+						sky->setFallbackBgColor(*event.set_sky.bgcolor);
+					}
+
+					delete event.set_sky.bgcolor;
+					delete event.set_sky.type;
+					delete event.set_sky.params;
+				}
+				else if (event.type == CE_OVERRIDE_DAY_NIGHT_RATIO)
+				{
+					bool enable = event.override_day_night_ratio.do_override;
+					u32 value = event.override_day_night_ratio.ratio_f * 1000;
+					client.getEnv().setDayNightRatioOverride(enable, value);
 				}
 			}
 		}
@@ -3154,7 +3231,7 @@ void the_game(
 				
 				// Sign special case, at least until formspec is properly implemented.
 				// Deprecated?
-				if(meta && meta->getString("formspec") == "hack:sign_text_input" 
+				if(meta && meta->getString("formspec") == "hack:sign_text_input"
 						&& !random_input
 						&& !input->isKeyDown(getKeySetting("keymap_sneak")))
 				{
@@ -3195,23 +3272,28 @@ void the_game(
 				// Otherwise report right click to server
 				else
 				{
-					// Report to server
-					client.interact(3, pointed);
-					camera.setDigging(1);  // right click animation
-					
+					camera.setDigging(1);  // right click animation (always shown for feedback)
+
 					// If the wielded item has node placement prediction,
 					// make that happen
 					bool placed = nodePlacementPrediction(client,
-							playeritem_def,
-							nodepos, neighbourpos);
-					
-					// Read the sound
-					if(placed)
+						playeritem_def,
+						nodepos, neighbourpos);
+
+					if(placed) {
+						// Report to server
+						client.interact(3, pointed);
+						// Read the sound
 						soundmaker.m_player_rightpunch_sound =
-								playeritem_def.sound_place;
-					else
+							playeritem_def.sound_place;
+					} else {
 						soundmaker.m_player_rightpunch_sound =
-								SimpleSoundSpec();
+							SimpleSoundSpec();
+					}
+
+					if (playeritem_def.node_placement_prediction == "" ||
+						nodedef->get(map.getNode(nodepos)).rightclickable)
+						client.interact(3, pointed); // Report to server
 				}
 			}
 		}
@@ -3637,7 +3719,7 @@ void the_game(
 
 				driver->getOverrideMaterial().Material.ColorMask = irr::video::ECP_RED;
 				driver->getOverrideMaterial().EnableFlags  = irr::video::EMF_COLOR_MASK;
-				driver->getOverrideMaterial().EnablePasses = irr::scene::ESNRP_SKY_BOX + 
+				driver->getOverrideMaterial().EnablePasses = irr::scene::ESNRP_SKY_BOX +
 															 irr::scene::ESNRP_SOLID +
 															 irr::scene::ESNRP_TRANSPARENT +
 															 irr::scene::ESNRP_TRANSPARENT_EFFECT +
@@ -3847,6 +3929,16 @@ void the_game(
 
 	chat_backend.addMessage(L"", L"# Disconnected.");
 	chat_backend.addMessage(L"", L"");
+
+	client.Stop();
+
+	//force answer all texture and shader jobs (TODO return empty values)
+
+	while(!client.isShutdown()) {
+		tsrc->processQueue();
+		shsrc->processQueue();
+		sleep_ms(100);
+	}
 
 	// Client scope (client is destructed before destructing *def and tsrc)
 	}while(0);

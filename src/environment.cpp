@@ -49,7 +49,9 @@ Environment::Environment():
 	m_time_of_day(9000),
 	m_time_of_day_f(9000./24000),
 	m_time_of_day_speed(0),
-	m_time_counter(0)
+	m_time_counter(0),
+	m_enable_day_night_ratio_override(false),
+	m_day_night_ratio_override(0.0f)
 {
 }
 
@@ -190,6 +192,8 @@ std::list<Player*> Environment::getPlayers(bool ignore_disconnected)
 
 u32 Environment::getDayNightRatio()
 {
+	if(m_enable_day_night_ratio_override)
+		return m_day_night_ratio_override;
 	bool smooth = g_settings->getBool("enable_shaders");
 	return time_to_daynight_ratio(m_time_of_day_f*24000, smooth);
 }
@@ -258,7 +262,7 @@ void ActiveBlockList::update(std::list<v3s16> &active_positions,
 	/*
 		Create the new list
 	*/
-	std::set<v3s16> newlist;
+	std::set<v3s16> newlist = m_forceloaded_list;
 	for(std::list<v3s16>::iterator i = active_positions.begin();
 			i != active_positions.end(); ++i)
 	{
@@ -1005,7 +1009,8 @@ void ServerEnvironment::clearAllObjects()
 		}
 		num_blocks_checked++;
 
-		if(num_blocks_checked % report_interval == 0){
+		if(report_interval != 0 &&
+				num_blocks_checked % report_interval == 0){
 			float percent = 100.0 * (float)num_blocks_checked /
 					loadable_blocks.size();
 			infostream<<"ServerEnvironment::clearAllObjects(): "

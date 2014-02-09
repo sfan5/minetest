@@ -273,7 +273,7 @@ int ModApiEnvMod::l_punch_node(lua_State *L)
 	}
 	// Punch it with a NULL puncher (appears in Lua as a non-functional
 	// ObjectRef)
-	bool success = scriptIfaceNode->node_on_punch(pos, n, NULL);
+	bool success = scriptIfaceNode->node_on_punch(pos, n, NULL, PointedThing());
 	lua_pushboolean(L, success);
 	return 1;
 }
@@ -798,6 +798,27 @@ int ModApiEnvMod::l_get_humidity(lua_State *L)
 	return 1;
 }
 
+// minetest.forceload_block(blockpos)
+// blockpos = {x=num, y=num, z=num}
+int ModApiEnvMod::l_forceload_block(lua_State *L)
+{
+	GET_ENV_PTR;
+
+	v3s16 blockpos = read_v3s16(L, 1);
+	env->getForceloadedBlocks()->insert(blockpos);
+	return 0;
+}
+
+// minetest.forceload_free_block(blockpos)
+// blockpos = {x=num, y=num, z=num}
+int ModApiEnvMod::l_forceload_free_block(lua_State *L)
+{
+	GET_ENV_PTR;
+
+	v3s16 blockpos = read_v3s16(L, 1);
+	env->getForceloadedBlocks()->erase(blockpos);
+	return 0;
+}
 
 void ModApiEnvMod::Initialize(lua_State *L, int top)
 {
@@ -836,4 +857,6 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(transforming_liquid_add);
 	API_FCT(get_heat);
 	API_FCT(get_humidity);
+	API_FCT(forceload_block);
+	API_FCT(forceload_free_block);
 }
