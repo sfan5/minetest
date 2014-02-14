@@ -315,8 +315,13 @@ std::string get_sysinfo()
 #else
 	struct utsname osinfo;
 	uname(&osinfo);
-	return std::string(osinfo.sysname) + "/"
-		+ osinfo.release + " " + osinfo.machine;
+	return
+#ifdef __ANDROID__
+		std::string("Android") +
+#else
+		std::string(osinfo.sysname) +
+#endif
+		"/" + osinfo.release + " " + osinfo.machine;
 #endif
 }
 
