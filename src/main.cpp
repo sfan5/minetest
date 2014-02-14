@@ -308,6 +308,20 @@ public:
 				}
 			}
 		}
+#ifdef __ANDROID__
+		if(event.EventType == irr::EET_MULTI_TOUCH_EVENT)
+		{
+			u8 n = 0;
+			for(u8 i = 0; i < event.MultiTouchInput.PointerCount; i++)
+			{
+				if(!event.MultiTouchInput.Touched[i])
+					continue;
+				MultiTouches[n] = v2s32(event.MultiTouchInput.X[i], event.MultiTouchInput.Y[i]);
+				n++;
+			}
+			NumMultiTouches = n;
+		}
+#endif
 
 		return false;
 	}
@@ -365,6 +379,10 @@ public:
 	bool right_active;
 
 	s32 mouse_wheel;
+#ifdef __ANDROID__
+	v2s32 MultiTouches[50];
+	s32 NumMultiTouches;
+#endif
 
 private:
 
@@ -450,6 +468,24 @@ public:
 	{
 		return m_receiver->getMouseWheel();
 	}
+	virtual u8 getNumMultiTouches()
+	{
+#ifdef __ANDROID__
+		return m_receiver->NumMultiTouches;
+#else
+		return 1;
+#endif
+	}
+	virtual v2s32 *getMultiTouches()
+	{
+#ifdef __ANDROID__
+		return m_receiver->MultiTouches;
+#else
+		mpos = m_device->getCursorControl()->getPosition();
+		return &mpos;
+#endif
+	}
+
 
 	void clear()
 	{
@@ -458,6 +494,9 @@ public:
 private:
 	IrrlichtDevice *m_device;
 	MyEventReceiver *m_receiver;
+#if !defined(__ANDROID__)
+	v2s32 mpos;
+#endif
 };
 
 class RandomInputHandler : public InputHandler
@@ -536,6 +575,14 @@ public:
 	virtual s32 getMouseWheel()
 	{
 		return 0;
+	}
+	virtual u8 getNumMultiTouches()
+	{
+		return 1;
+	}
+	virtual v2s32 *getMultiTouches()
+	{
+		return &mousepos;
 	}
 
 	virtual void step(float dtime)

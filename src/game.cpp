@@ -2298,13 +2298,17 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 					turn_amount = v2f(dx, dy).getLength() * d;
 				} else {
 					s32 dx = 0, dy = 0;
-					if(input->getLeftState() &&
-						input->getMousePos().X >= rpadbase.X && input->getMousePos().X < rpadbase.X+rpadsize &&
-						input->getMousePos().Y >= rpadbase.Y && input->getMousePos().Y < rpadbase.Y+rpadsize)
+					for(u8 i = 0; i < input->getNumMultiTouches(); i++)
 					{
-						dx = input->getMousePos().X - (rpadbase.X + (rpadsize/2.0));
-						dy = input->getMousePos().Y - (rpadbase.Y + (rpadsize/2.0));
-						lmouse_handled = true;
+						v2s32 mpos = input->getMultiTouches()[i];
+						if(mpos.X >= rpadbase.X && mpos.X < rpadbase.X+rpadsize &&
+							mpos.Y >= rpadbase.Y && mpos.Y < rpadbase.Y+rpadsize)
+						{
+							dx = mpos.X - (rpadbase.X + (rpadsize/2.0));
+							dy = mpos.Y - (rpadbase.Y + (rpadsize/2.0));
+							lmouse_handled = true;
+							break;
+						}
 					}
 					if(invert_mouse)
 						dy = -dy;
@@ -2377,13 +2381,17 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				256*(int)input->getRightState();
 			} else {
 				s16 cx = 0, cy = 0;
-				if(input->getLeftState() &&
-					input->getMousePos().X >= lpadbase.X && input->getMousePos().X < lpadbase.X+lpadsize &&
-					input->getMousePos().Y >= lpadbase.Y && input->getMousePos().Y < lpadbase.Y+lpadsize)
+				for(u8 i = 0; i < input->getNumMultiTouches(); i++)
 				{
-					cx = input->getMousePos().X - (lpadbase.X + (lpadsize/2.0));
-					cy = input->getMousePos().Y - (lpadbase.Y + (lpadsize/2.0));
-					lmouse_handled = true;
+					v2s32 mpos = input->getMultiTouches()[i];
+					if(mpos.X >= lpadbase.X && mpos.X < lpadbase.X+lpadsize &&
+						mpos.Y >= lpadbase.Y && mpos.Y < lpadbase.Y+lpadsize)
+					{
+						cx = mpos.X - (lpadbase.X + (lpadsize/2.0));
+						cy = mpos.Y - (lpadbase.Y + (lpadsize/2.0));
+						lmouse_handled = true;
+						break;
+					}
 				}
 				bool c_fwd = false,
 					c_bwd = false,

@@ -116,6 +116,8 @@ public:
 	virtual void resetRightReleased() = 0;
 	
 	virtual s32 getMouseWheel() = 0;
+	virtual u8 getNumMultiTouches() = 0;
+	virtual v2s32 *getMultiTouches() = 0;
 
 	virtual void step(float dtime) {};
 
