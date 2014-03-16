@@ -169,7 +169,7 @@ else()
 	if(ANDROID)
 		set(PLATFORM_LIBS "-landroid -llog -Wl,-Bstatic -lcrystax -Wl,-Bdynamic" ${CMAKE_DL_LIBS})
 		# Do not touch the above line, I spent like 2 hours figuring out a way for cmake not to touch my linking flags
-		set(CLIENT_PLATFORM_LIBS -lEGL -lGLESv1_CM -lGLESv2 ${CMAKE_DL_LIBS})
+		set(CLIENT_PLATFORM_LIBS -lEGL -lGLESv1_CM -lGLESv2 -lOpenSLES ${CMAKE_DL_LIBS})
 	else(ANDROID)
 		set(PLATFORM_LIBS -lpthread -lrt ${CMAKE_DL_LIBS})
 		#set(CLIENT_PLATFORM_LIBS -lXxf86vm)
