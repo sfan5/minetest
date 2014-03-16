@@ -1627,6 +1627,12 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 	v2f lpadbase = v2f(
 		screensize.X/lmargindiv,
 		screensize.Y-lpadsize-(screensize.Y/lmargindiv));
+	u16 jpadsize = (screensize.X+g_settings->getU16("touchscreen_jpad_sizeadd"))
+		/ g_settings->getU16("touchscreen_jpad_sizediv");
+	float jmargindiv = g_settings->getFloat("touchscreen_jpad_margindiv");
+	v2f jpadbase = v2f(
+		screensize.X-jpadsize-(screensize.X/jmargindiv),
+		screensize.Y-jpadsize-(screensize.Y/jmargindiv));
 
 	/*
 		Shader constants
@@ -2381,6 +2387,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				256*(int)input->getRightState();
 			} else {
 				s16 cx = 0, cy = 0;
+				bool c_jump = false;
 				for(u8 i = 0; i < input->getNumMultiTouches(); i++)
 				{
 					v2s32 mpos = input->getMultiTouches()[i];
@@ -2390,7 +2397,14 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 						cx = mpos.X - (lpadbase.X + (lpadsize/2.0));
 						cy = mpos.Y - (lpadbase.Y + (lpadsize/2.0));
 						lmouse_handled = true;
-						break;
+						continue;
+					}
+					if(mpos.X >= jpadbase.X && mpos.X < jpadbase.X+jpadsize &&
+						mpos.Y >= jpadbase.Y && mpos.Y < jpadbase.Y+jpadsize)
+					{
+						c_jump = true;
+						lmouse_handled = true;
+						continue;
 					}
 				}
 				bool c_fwd = false,
@@ -2411,7 +2425,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 					c_bwd,
 					c_left,
 					c_right,
-					input->isKeyDown(getKeySetting("keymap_jump")),
+					c_jump,
 					input->isKeyDown(getKeySetting("keymap_special1")),
 					input->isKeyDown(getKeySetting("keymap_sneak")),
 					input->getLeftState() && !lmouse_handled,
@@ -2425,7 +2439,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				2*(int)c_bwd+
 				4*(int)c_left+
 				8*(int)c_right+
-				16*(int)input->isKeyDown(getKeySetting("keymap_jump"))+
+				16*(int)c_jump+
 				32*(int)input->isKeyDown(getKeySetting("keymap_special1"))+
 				64*(int)input->isKeyDown(getKeySetting("keymap_sneak"))+
 				128*(int)(input->getLeftState() && !lmouse_handled)+
@@ -3669,6 +3683,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		*/
 		if(g_settings->getBool("touchscreen"))
 		{
+			// Right pad (moving)
 			driver->draw2DRectangle(video::SColor(128,255,255,255),
 				core::rect<s32>(rpadbase.X,rpadbase.Y,rpadbase.X+rpadsize,rpadbase.Y+rpadsize),
 				NULL);
@@ -3676,12 +3691,17 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				core::rect<s32>(rpadbase.X+(rpadsize/2.0)-1,rpadbase.Y+(rpadsize/2.0)-1,
 				rpadbase.X+(rpadsize/2.0)+1,rpadbase.Y+(rpadsize/2.0)+1),
 				NULL);
+			// Left pad (looking around)
 			driver->draw2DRectangle(video::SColor(128,255,255,255),
 				core::rect<s32>(lpadbase.X,lpadbase.Y,lpadbase.X+lpadsize,lpadbase.Y+lpadsize),
 				NULL);
 			driver->draw2DRectangle(video::SColor(255,0,0,255),
 				core::rect<s32>(lpadbase.X+(lpadsize/2.0)-1,lpadbase.Y+(lpadsize/2.0)-1,
 				lpadbase.X+(lpadsize/2.0)+1,lpadbase.Y+(lpadsize/2.0)+1),
+				NULL);
+			// Jump pad
+			driver->draw2DRectangle(video::SColor(128,255,255,255),
+				core::rect<s32>(jpadbase.X,jpadbase.Y,jpadbase.X+jpadsize,jpadbase.Y+jpadsize),
 				NULL);
 		}
 

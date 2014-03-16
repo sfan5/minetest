@@ -153,6 +153,9 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("touchscreen_lpad_sizeadd", "500");
 	settings->setDefault("touchscreen_lpad_sizediv", "8.0");
 	settings->setDefault("touchscreen_lpad_margindiv", "8.0");
+	settings->setDefault("touchscreen_jpad_sizeadd", "400");
+	settings->setDefault("touchscreen_jpad_sizediv", "16.0");
+	settings->setDefault("touchscreen_jpad_margindiv", "60.0");
 
 	settings->setDefault("curl_timeout", "5000");
 	settings->setDefault("curl_parallel_limit", "8");
