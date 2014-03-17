@@ -85,6 +85,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "database-leveldb.h"
 #endif
 
+#ifndef SERVER
+extern "C" {
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
+}
+#endif
+
 /*
 	Settings.
 	These are loaded from the config file.
@@ -624,6 +632,183 @@ private:
 	bool rightreleased;
 };
 
+class LuaInputHandler : public InputHandler
+{
+public:
+	LuaInputHandler(const char *scriptfile)
+	{
+		L = luaL_newstate();
+		luaL_openlibs(L);
+		if(luaL_loadfile(L, scriptfile))
+			throw BaseException("LuaInputHandler failed to load .lua file");
+		if(lua_pcall(L, 0, 0, 0) != 0)
+			errorstream<<"Failed to run script: %s", lua_tostring(L, -1);
+	}
+	~LuaInputHandler()
+	{
+		lua_close(L);
+	}
+
+	virtual bool isKeyDown(const KeyPress &keyCode)
+	{
+		lua_getglobal(L, "isKeyDown");
+		lua_pushstring(L, keyCode.sym());
+		if(lua_pcall(L, 1, 1, 0) != 0)
+		{
+			errorstream<<"Failed to run 'isKeyDown': "<<lua_tostring(L, -1);
+			return false;
+		}
+		if(!lua_isboolean(L, -1))
+		{
+			errorstream<<"'isKeyDown' didn't return a boolean";
+			return false;
+		}
+		return lua_toboolean(L, -1);
+	}
+	virtual bool wasKeyDown(const KeyPress &keyCode)
+	{
+		lua_getglobal(L, "wasKeyDown");
+		lua_pushstring(L, keyCode.sym());
+		if(lua_pcall(L, 1, 1, 0) != 0)
+		{
+			errorstream<<"Failed to run 'wasKeyDown': "<<lua_tostring(L, -1);
+			return false;
+		}
+		if(!lua_isboolean(L, -1))
+		{
+			errorstream<<"'wasKeyDown' didn't return a boolean";
+			return false;
+		}
+		return lua_toboolean(L, -1);
+	}
+	virtual v2s32 getMousePos()
+	{
+		lua_getglobal(L, "getMousePos");
+		if(lua_pcall(L, 0, 2, 0) != 0)
+		{
+			errorstream<<"Failed to run 'getMousePos': "<<lua_tostring(L, -1);
+			return v2s32(0, 0);
+		}
+		if(!lua_isnumber(L, -1) || !lua_isnumber(L, -2))
+		{
+			errorstream<<"'getMousePos' didn't return two numbers";
+			return v2s32(0, 0);
+		}
+		v2s32 pos(0, 0);
+		pos.X = lua_tonumber(L, -2);
+		pos.Y = lua_tonumber(L, -1);
+		return pos;
+	}
+	virtual void setMousePos(s32 x, s32 y)
+	{
+		lua_getglobal(L, "setMousePos");
+		lua_pushinteger(L, x);
+		lua_pushinteger(L, y);
+		if(lua_pcall(L, 2, 0, 0) != 0)
+		{
+			errorstream<<"Failed to run 'setMousePos': "<<lua_tostring(L, -1);
+			return;
+		}
+	}
+
+	virtual bool getLeftState()
+	{
+		return gbool("getLeftState");
+	}
+	virtual bool getRightState()
+	{
+		return gbool("getRightState");
+	}
+
+	virtual bool getLeftClicked()
+	{
+		return gbool("getLeftClicked");
+	}
+	virtual bool getRightClicked()
+	{
+		return gbool("getRightClicked");
+	}
+	virtual void resetLeftClicked()
+	{
+		gnil("resetLeftClicked");
+	}
+	virtual void resetRightClicked()
+	{
+		gnil("resetRightClicked");
+	}
+
+	virtual bool getLeftReleased()
+	{
+		return gbool("getLeftReleased");
+	}
+	virtual bool getRightReleased()
+	{
+		return gbool("getRightReleased");
+	}
+	virtual void resetLeftReleased()
+	{
+		gnil("resetLeftReleased");
+	}
+	virtual void resetRightReleased()
+	{
+		gnil("resetRightReleased");
+	}
+
+	virtual s32 getMouseWheel()
+	{
+		lua_getglobal(L, "getMouseWheel");
+		if(lua_pcall(L, 0, 1, 0) != 0)
+		{
+			errorstream<<"Failed to run 'getMouseWheel': "<<lua_tostring(L, -1);
+			return 0;
+		}
+		if(!lua_isnumber(L, -1))
+		{
+			errorstream<<"'getMouseWheel' didn't return a number";
+			return 0;
+		}
+		return lua_tonumber(L, -1);
+	}
+
+	virtual void step(float dtime)
+	{
+		lua_getglobal(L, "step");
+		lua_pushnumber(L, dtime);
+		if(lua_pcall(L, 1, 0, 0) != 0)
+		{
+			errorstream<<"Failed to run 'step': "<<lua_tostring(L, -1);
+			return;
+		}
+	}
+
+	bool gbool(const char *funcname) // Calls a lua function (w/o args) and returns the boolean it returend
+	{
+		lua_getglobal(L, funcname);
+		if(lua_pcall(L, 0, 1, 0) != 0)
+		{
+			errorstream<<"Failed to run '"<<funcname<<"': "<<lua_tostring(L, -1);
+			return false;
+		}
+		if(!lua_isboolean(L, -1))
+		{
+			errorstream<<"'"<<funcname<<"' didn't return a boolean";
+			return false;
+		}
+		return lua_toboolean(L, -1);
+	}
+	void gnil(const char *funcname) // Calls a lua function (w/o args)
+	{
+		lua_getglobal(L, funcname);
+		if(lua_pcall(L, 0, 0, 0) != 0)
+		{
+			errorstream<<"Failed to run '"<<funcname<<"': "<<lua_tostring(L, -1);
+			return;
+		}
+	}
+private:
+	lua_State *L;
+};
+
 #endif // !SERVER
 
 // These are defined global so that they're not optimized too much.
@@ -794,6 +979,8 @@ int main(int argc, char *argv[])
 			_("Address to connect to. ('' = local game)"))));
 	allowed_options.insert(std::make_pair("random-input", ValueSpec(VALUETYPE_FLAG,
 			_("Enable random user input, for testing"))));
+	allowed_options.insert(std::make_pair("lua-input", ValueSpec(VALUETYPE_STRING,
+			_("Set lua file to use for InputHandler"))));
 	allowed_options.insert(std::make_pair("server", ValueSpec(VALUETYPE_FLAG,
 			_("Run dedicated server"))));
 	allowed_options.insert(std::make_pair("name", ValueSpec(VALUETYPE_STRING,
@@ -1472,7 +1659,9 @@ int main(int argc, char *argv[])
 	bool random_input = g_settings->getBool("random_input")
 			|| cmd_args.getFlag("random-input");
 	InputHandler *input = NULL;
-	if(random_input)
+	if(cmd_args.exists("lua-input"))
+		input = new LuaInputHandler(cmd_args.get("lua-input").c_str());
+	else if(random_input)
 		input = new RandomInputHandler();
 	else
 		input = new RealInputHandler(device, &receiver);
