@@ -82,6 +82,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #if defined(__ANDROID__) && !defined(SERVER)
 #include "android/android_native_app_glue.h"
 #include <android/log.h>
+#include <jni.h>
 #endif
 
 #include "database-sqlite3.h"
@@ -309,17 +310,16 @@ public:
 			}
 		}
 #ifdef __ANDROID__
-		if(event.EventType == irr::EET_MULTI_TOUCH_EVENT)
+		if(event.EventType == EET_TOUCH_INPUT_EVENT)
 		{
-			u8 n = 0;
-			for(u8 i = 0; i < event.MultiTouchInput.PointerCount; i++)
+			if(event.TouchInput.Event == ETIE_PRESSED_DOWN || event.TouchInput.Event == ETIE_MOVED)
 			{
-				if(!event.MultiTouchInput.Touched[i])
-					continue;
-				MultiTouches[n] = v2s32(event.MultiTouchInput.X[i], event.MultiTouchInput.Y[i]);
-				n++;
+				MultiTouches[event.TouchInput.ID] = v2s32(event.TouchInput.X, event.TouchInput.Y);
 			}
-			NumMultiTouches = n;
+			else if(event.TouchInput.Event == ETIE_LEFT_UP)
+			{
+				MultiTouches.erase(event.TouchInput.ID);
+			}
 		}
 #endif
 
@@ -380,8 +380,7 @@ public:
 
 	s32 mouse_wheel;
 #ifdef __ANDROID__
-	v2s32 MultiTouches[50];
-	s32 NumMultiTouches;
+	std::map<size_t, v2s32> MultiTouches;
 #endif
 
 private:
@@ -468,21 +467,19 @@ public:
 	{
 		return m_receiver->getMouseWheel();
 	}
-	virtual u8 getNumMultiTouches()
+
+	virtual std::vector<v2s32> getMultiTouches()
 	{
+		std::vector<v2s32> vec;
 #ifdef __ANDROID__
-		return m_receiver->NumMultiTouches;
+		for(std::map<size_t, v2s32>::iterator it = m_receiver->MultiTouches.begin(); it != m_receiver->MultiTouches.end(); it++)
+		{
+			vec.push_back(it->second);
+		}
+		return vec;
 #else
-		return 1;
-#endif
-	}
-	virtual v2s32 *getMultiTouches()
-	{
-#ifdef __ANDROID__
-		return m_receiver->MultiTouches;
-#else
-		mpos = m_device->getCursorControl()->getPosition();
-		return &mpos;
+		vec.push_back(m_device->getCursorControl()->getPosition());
+		return vec;
 #endif
 	}
 
@@ -494,9 +491,6 @@ public:
 private:
 	IrrlichtDevice *m_device;
 	MyEventReceiver *m_receiver;
-#if !defined(__ANDROID__)
-	v2s32 mpos;
-#endif
 };
 
 class RandomInputHandler : public InputHandler
@@ -576,13 +570,12 @@ public:
 	{
 		return 0;
 	}
-	virtual u8 getNumMultiTouches()
+
+	virtual std::vector<v2s32> getMultiTouches()
 	{
-		return 1;
-	}
-	virtual v2s32 *getMultiTouches()
-	{
-		return &mousepos;
+		std::vector<v2s32> vec;
+		vec.push_back(mousepos);
+		return vec;
 	}
 
 	virtual void step(float dtime)
@@ -793,6 +786,7 @@ static void print_worldspecs(const std::vector<WorldSpec> &worldspecs,
 #if defined(__ANDROID__) && !defined(SERVER)
 
 android_app *g_app;
+JNIEnv *jnienv;
 
 int main(int argc, char *argv[]);
 
@@ -800,24 +794,30 @@ extern "C" void android_main(struct android_app* app)
 {
 	app_dummy();
 	g_app = app;
+	jnienv = NULL;
+	JavaVM *jvm = app->activity->vm;
+	JavaVMAttachArgs lJavaVMAttachArgs;
+	lJavaVMAttachArgs.version = JNI_VERSION_1_6;
+	lJavaVMAttachArgs.name = "NativeThread";
+	lJavaVMAttachArgs.group = NULL;
+	jvm->AttachCurrentThread(&jnienv, &lJavaVMAttachArgs); // Attach our thread to the JVM, we need this to call java methods
 	const char *av[] = {
 		"minetest",
 #ifndef NDEBUG
 		"--verbose", "--disable-unittests",
 #endif
 	};
-#ifndef NDEBUG
+//#ifndef NDEBUG
+#if 1
 	if(!freopen("/sdcard/minetest/stdout.txt", "w", stdout))
 		__android_log_print(ANDROID_LOG_WARN, "Minetest", "remapping stdout failed!");
 	if(!freopen("/sdcard/minetest/stderr.txt", "w", stderr))
 		__android_log_print(ANDROID_LOG_WARN, "Minetest", "remapping stderr failed!");
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
-	/*char buf[100];
-	snprintf(buf, 99, "su -c \"/data/local/tmp/gdbserver --attach :5039 %d\"", getpid());
-	system(buf);*/
 #endif
 	main(sizeof(av) / sizeof(av[0]), (char**) av);
+	jvm->DetachCurrentThread();
 }
 #endif
 

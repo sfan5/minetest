@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include "keycode.h"
 #include <list>
+#include <vector>
 
 class KeyList : protected std::list<KeyPress>
 {
@@ -116,8 +117,8 @@ public:
 	virtual void resetRightReleased() = 0;
 	
 	virtual s32 getMouseWheel() = 0;
-	virtual u8 getNumMultiTouches() = 0;
-	virtual v2s32 *getMultiTouches() = 0;
+
+	virtual std::vector<v2s32> getMultiTouches() = 0;
 
 	virtual void step(float dtime) {};
 

@@ -2304,9 +2304,10 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 					turn_amount = v2f(dx, dy).getLength() * d;
 				} else {
 					s32 dx = 0, dy = 0;
-					for(u8 i = 0; i < input->getNumMultiTouches(); i++)
+					std::vector<v2s32> touches = input->getMultiTouches();
+					for(u8 i = 0; i < touches.size(); i++)
 					{
-						v2s32 mpos = input->getMultiTouches()[i];
+						v2s32 mpos = touches[i];
 						if(mpos.X >= rpadbase.X && mpos.X < rpadbase.X+rpadsize &&
 							mpos.Y >= rpadbase.Y && mpos.Y < rpadbase.Y+rpadsize)
 						{
@@ -2388,9 +2389,10 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 			} else {
 				s16 cx = 0, cy = 0;
 				bool c_jump = false;
-				for(u8 i = 0; i < input->getNumMultiTouches(); i++)
+				std::vector<v2s32> touches = input->getMultiTouches();
+				for(u8 i = 0; i < touches.size(); i++)
 				{
-					v2s32 mpos = input->getMultiTouches()[i];
+					v2s32 mpos = touches[i];
 					if(mpos.X >= lpadbase.X && mpos.X < lpadbase.X+lpadsize &&
 						mpos.Y >= lpadbase.Y && mpos.Y < lpadbase.Y+lpadsize)
 					{
