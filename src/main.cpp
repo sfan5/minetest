@@ -663,7 +663,9 @@ public:
 			errorstream<<"'isKeyDown' didn't return a boolean";
 			return false;
 		}
-		return lua_toboolean(L, -1);
+		bool b = lua_toboolean(L, -1);
+		lua_pop(L, 1);
+		return b;
 	}
 	virtual bool wasKeyDown(const KeyPress &keyCode)
 	{
@@ -679,7 +681,9 @@ public:
 			errorstream<<"'wasKeyDown' didn't return a boolean";
 			return false;
 		}
-		return lua_toboolean(L, -1);
+		bool b = lua_toboolean(L, -1);
+		lua_pop(L, 1);
+		return b;
 	}
 	virtual v2s32 getMousePos()
 	{
@@ -697,6 +701,7 @@ public:
 		v2s32 pos(0, 0);
 		pos.X = lua_tonumber(L, -2);
 		pos.Y = lua_tonumber(L, -1);
+		lua_pop(L, 2);
 		return pos;
 	}
 	virtual void setMousePos(s32 x, s32 y)
@@ -767,7 +772,9 @@ public:
 			errorstream<<"'getMouseWheel' didn't return a number";
 			return 0;
 		}
-		return lua_tonumber(L, -1);
+		s32 n = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+		return n;
 	}
 
 	virtual void step(float dtime)
@@ -794,7 +801,9 @@ public:
 			errorstream<<"'"<<funcname<<"' didn't return a boolean";
 			return false;
 		}
-		return lua_toboolean(L, -1);
+		bool b = lua_toboolean(L, -1);
+		lua_pop(L, 1);
+		return b;
 	}
 	void gnil(const char *funcname) // Calls a lua function (w/o args)
 	{
