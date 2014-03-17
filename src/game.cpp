@@ -1887,8 +1887,6 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 			Direct handling of user input
 		*/
 
-		bool lmouse_handled = false;
-
 		// Reset input if window not active or some menu is active
 		if(device->isWindowActive() == false
 				|| noMenuActive() == false
@@ -2313,7 +2311,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 						{
 							dx = mpos.X - (rpadbase.X + (rpadsize/2.0));
 							dy = mpos.Y - (rpadbase.Y + (rpadsize/2.0));
-							lmouse_handled = true;
+							input->resetLeftState();
 							break;
 						}
 					}
@@ -2398,14 +2396,14 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 					{
 						cx = mpos.X - (lpadbase.X + (lpadsize/2.0));
 						cy = mpos.Y - (lpadbase.Y + (lpadsize/2.0));
-						lmouse_handled = true;
+						input->resetLeftState();
 						continue;
 					}
 					if(mpos.X >= jpadbase.X && mpos.X < jpadbase.X+jpadsize &&
 						mpos.Y >= jpadbase.Y && mpos.Y < jpadbase.Y+jpadsize)
 					{
 						c_jump = true;
-						lmouse_handled = true;
+						input->resetLeftState();
 						continue;
 					}
 				}
@@ -2430,7 +2428,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 					c_jump,
 					input->isKeyDown(getKeySetting("keymap_special1")),
 					input->isKeyDown(getKeySetting("keymap_sneak")),
-					input->getLeftState() && !lmouse_handled,
+					input->getLeftState(),
 					input->getRightState(),
 					camera_pitch,
 					camera_yaw
@@ -2444,7 +2442,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				16*(int)c_jump+
 				32*(int)input->isKeyDown(getKeySetting("keymap_special1"))+
 				64*(int)input->isKeyDown(getKeySetting("keymap_sneak"))+
-				128*(int)(input->getLeftState() && !lmouse_handled)+
+				128*(int)(input->getLeftState())+
 				256*(int)input->getRightState();
 			}
 			client.setPlayerControl(control);
@@ -2881,7 +2879,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		*/
 		if(digging)
 		{
-			if(input->getLeftReleased() && !lmouse_handled)
+			if(input->getLeftReleased())
 			{
 				infostream<<"Left button released"
 					<<" (stopped digging)"<<std::endl;
@@ -2954,7 +2952,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 			*/
 			
 			if(nodig_delay_timer <= 0.0 && input->getLeftState()
-					&& client.checkPrivilege("interact") && !lmouse_handled)
+					&& client.checkPrivilege("interact"))
 			{
 				if(!digging)
 				{
@@ -3167,7 +3165,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 			}
 
 			//if(input->getLeftClicked())
-			if(input->getLeftState() && !lmouse_handled)
+			if(input->getLeftState())
 			{
 				bool do_punch = false;
 				bool do_punch_damage = false;
@@ -3201,7 +3199,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				client.interact(3, pointed);  // place
 			}
 		}
-		else if(input->getLeftState() && !lmouse_handled)
+		else if(input->getLeftState())
 		{
 			// When button is held down in air, show continuous animation
 			left_punch = true;
@@ -3209,7 +3207,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 
 		pointed_old = pointed;
 		
-		if((left_punch || input->getLeftClicked()) && !lmouse_handled)
+		if(left_punch || input->getLeftClicked())
 		{
 			camera.setDigging(0); // left click animation
 		}

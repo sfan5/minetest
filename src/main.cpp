@@ -428,6 +428,14 @@ public:
 	{
 		return m_receiver->right_active;
 	}
+	virtual bool resetLeftState()
+	{
+		m_receiver->left_active = false;
+	}
+	virtual bool resetRightState()
+	{
+		m_receiver->right_active = false;
+	}
 
 	virtual bool getLeftClicked()
 	{
@@ -530,6 +538,14 @@ public:
 	virtual bool getRightState()
 	{
 		return rightdown;
+	}
+	virtual bool resetLeftState()
+	{
+		leftdown = false;
+	}
+	virtual bool resetRightState()
+	{
+		rightdown = false;
 	}
 
 	virtual bool getLeftClicked()

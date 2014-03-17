@@ -105,6 +105,8 @@ public:
 
 	virtual bool getLeftState() = 0;
 	virtual bool getRightState() = 0;
+	virtual bool resetLeftState() = 0;
+	virtual bool resetRightState() = 0;
 
 	virtual bool getLeftClicked() = 0;
 	virtual bool getRightClicked() = 0;
