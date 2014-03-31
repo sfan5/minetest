@@ -289,33 +289,47 @@ void * EncodeThread::Thread()
 	m_counter = 0;
 	x264_picture_t pic_in;
 	x264_picture_alloc(&pic_in, X264_CSP_I420, m_ss.Width, m_ss.Height);
+	x264_param_t param;
+	irr::core::dimension2d<u32> m_hss = irr::core::dimension2d<u32>((u32) (m_ss.Width / 2.0), (u32) (m_ss.Height / 2.0));
+	unsigned char *outy = (unsigned char*) malloc(m_ss.Width * m_ss.Height);
+	unsigned char *outu = (unsigned char*) malloc(m_hss.Width * m_hss.Height);
+	unsigned char *outv = (unsigned char*) malloc(m_hss.Width * m_hss.Height);
 
 	while(!StopRequested())
 	{
-		if(m_quene->size() == 0)
+		if(m_queue->size() == 0)
 		{
 			sleep_ms(10);
 			continue;
 		}
 
-		// Convert to YUV
-		unsigned char *img = m_quene->front();
-		m_quene->pop_front();
-		unsigned char *outy = (unsigned char*) malloc(m_ss.Width * m_ss.Height);
-		unsigned char *outu = (unsigned char*) malloc(m_ss.Width * m_ss.Height);
-		unsigned char *outv = (unsigned char*) malloc(m_ss.Width * m_ss.Height);
+		unsigned char *img = m_queue->front().first;
+		/*param.i_fps_num = m_queue->front().second;
+		param.i_timebase_num = m_counter;*/
+		m_queue->pop_front();
+		/*printf("frame %d (fps=%d)\n", m_counter, param.i_fps_num);
+		x264_encoder_reconfig(m_encoder, &param);*/
+
+		// outu and outv need to be only half the picture size
+		// I do not know why but it works this way
+#define HALF16(n) ((u16) ((n)/2))
+#define TY (m_ss.Height-y-1)
 		for(u16 x = 0; x < m_ss.Width; x++) {
 			for(u16 y = 0; y < m_ss.Height; y++) {
 				u32 i = x*3 + y*3*m_ss.Width;
-				u32 j = x + y*m_ss.Width;
+				u32 j = x + TY*m_ss.Width;
+				//printf("(x|y) » (%d|%d) j=%d\n", x, y, j);
+				u32 k = HALF16(x) + HALF16(TY)*m_hss.Width;
 				unsigned char r = img[i];
 				unsigned char g = img[i+1];
 				unsigned char b = img[i+2];
 				outy[j] = RGB2Y(r, g, b);
-				outu[j] = RGB2U(r, g, b);
-				outv[j] = RGB2V(r, g, b);
+				outu[k] = RGB2U(r, g, b);
+				outv[k] = RGB2V(r, g, b);
 			}
 		}
+#undef HALF16
+#undef TY
 		free(img);
 
 		// Encode
@@ -326,21 +340,21 @@ void * EncodeThread::Thread()
 		pic_in.img.plane[1] = outu;
 		pic_in.img.plane[2] = outv;
 		pic_in.img.i_stride[0] = m_ss.Width;
-		pic_in.img.i_stride[1] = m_ss.Width;
-		pic_in.img.i_stride[2] = m_ss.Width;
+		pic_in.img.i_stride[1] = m_hss.Width;
+		pic_in.img.i_stride[2] = m_hss.Width;
 		pic_in.img.i_plane = 3;
 		int frame_size = x264_encoder_encode(m_encoder, &nals, &i_nals, &pic_in, &pic_out);
 		if(frame_size > 0)
 		{
 			fwrite((char*) nals[0].p_payload, frame_size, 1, m_dest);
 		}
-		free(outy);
-		free(outu);
-		free(outv);
 
 		m_counter++;
 	}
 
+	free(outy);
+	free(outu);
+	free(outv);
 	//x264_picture_clean(&pic_in);
 	fflush(m_dest);
 	fclose(m_dest);
@@ -1669,8 +1683,8 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 	u8 rec_frameskip_counter = 0;
 	u32 rec_frame = 0;
 	u8 rec_frameskip_setting = g_settings->getU16("video_frameskip");
-	std::deque<unsigned char*> rec_cache_raw;
-	EncodeThread rec_encodethread((std::deque<unsigned char*>*) NULL, NULL, NULL, irr::core::dimension2d<u32>(0, 0));
+	std::deque<std::pair<unsigned char*, u16> > rec_cache_raw;
+	EncodeThread rec_encodethread((std::deque<std::pair<unsigned char*, u16> >*) NULL, NULL, NULL, irr::core::dimension2d<u32>(0, 0));
 
 	/*
 		Some statistics are collected in these
@@ -2003,9 +2017,9 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 					rstatus<<" Encoding... Frame "<<rec_encodethread.m_counter<<"/"<<rec_frame<<" ";
 				}
 				guitext2->setText(rstatus.str().c_str());
-				unsigned char *temp = (unsigned char*) malloc(3 * screensize.X * screensize.Y);
-				glReadPixels(0, 0, screensize.X, screensize.Y, GL_RGB, GL_UNSIGNED_BYTE, temp);
-				rec_cache_raw.push_back(temp);
+				unsigned char *pxl = (unsigned char*) malloc(3 * screensize.X * screensize.Y);
+				glReadPixels(0, 0, screensize.X, screensize.Y, GL_RGB, GL_UNSIGNED_BYTE, pxl);
+				rec_cache_raw.push_back(std::pair<unsigned char*, u16>(pxl, floor(1./dtime)));
 				rec_frame++;
 			} else {
 				rec_frameskip_counter++;
@@ -2304,15 +2318,18 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 					param.i_threads = g_settings->getU16("video_threads");
 					param.i_width = screensize.X;
 					param.i_height = screensize.Y;
-					param.i_fps_num = 30;
+					param.i_fps_num = 1./dtime;
 					param.i_fps_den = 1;
-					param.i_keyint_max = 30;
-					param.b_intra_refresh = 1;
+					param.i_timebase_num = 0;
+					param.i_timebase_den = 1;
+					param.b_intra_refresh = 0;
+					param.b_annexb = 1;
+					param.b_repeat_headers = 1;
+					/*param.b_vfr_input = 1;
+					param.b_pulldown = 1;*/
 					param.rc.i_rc_method = X264_RC_CRF;
 					param.rc.f_rf_constant = g_settings->getU16("video_crf");
 					param.rc.f_rf_constant_max = g_settings->getU16("video_crf_max");
-					param.b_annexb = 1;
-					param.b_repeat_headers = 1;
 
 					x264_param_apply_profile(&param, g_settings->get("video_profile").c_str());
 					enc = x264_encoder_open(&param);

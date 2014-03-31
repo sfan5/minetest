@@ -154,8 +154,8 @@ class EncodeThread : public JThread
 {
 public:
 
-	EncodeThread(std::deque<unsigned char*>* quene, FILE* dest, x264_t *enc, irr::core::dimension2d<u32> ss):
-		m_quene(quene),
+	EncodeThread(std::deque<std::pair<unsigned char*, u16> >* queue, FILE* dest, x264_t *enc, irr::core::dimension2d<u32> ss):
+		m_queue(queue),
 		m_dest(dest),
 		m_encoder(enc),
 		m_ss(ss)
@@ -164,7 +164,7 @@ public:
 
 	void * Thread();
 
-	std::deque<unsigned char*>* m_quene;
+	std::deque<std::pair<unsigned char*, u16> >* m_queue;
 
 	FILE *m_dest;
 
