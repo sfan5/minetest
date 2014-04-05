@@ -288,12 +288,11 @@ void * EncodeThread::Thread()
 
 	m_counter = 0;
 	x264_picture_t pic_in;
-	x264_picture_alloc(&pic_in, X264_CSP_I420, m_ss.Width, m_ss.Height);
-	x264_param_t param;
-	irr::core::dimension2d<u32> m_hss = irr::core::dimension2d<u32>((u32) (m_ss.Width / 2.0), (u32) (m_ss.Height / 2.0));
+	x264_picture_alloc(&pic_in, X264_CSP_I444, m_ss.Width, m_ss.Height);
+	/*x264_param_t param;*/
 	unsigned char *outy = (unsigned char*) malloc(m_ss.Width * m_ss.Height);
-	unsigned char *outu = (unsigned char*) malloc(m_hss.Width * m_hss.Height);
-	unsigned char *outv = (unsigned char*) malloc(m_hss.Width * m_hss.Height);
+	unsigned char *outu = (unsigned char*) malloc(m_ss.Width * m_ss.Height);
+	unsigned char *outv = (unsigned char*) malloc(m_ss.Width * m_ss.Height);
 
 	while(!StopRequested())
 	{
@@ -310,29 +309,22 @@ void * EncodeThread::Thread()
 		/*printf("frame %d (fps=%d)\n", m_counter, param.i_fps_num);
 		x264_encoder_reconfig(m_encoder, &param);*/
 
-		// outu and outv need to be only half the picture size
-		// I do not know why but it works this way
-#define HALF16(n) ((u16) ((n)/2))
 #define TY (m_ss.Height-y-1)
 		for(u16 x = 0; x < m_ss.Width; x++) {
 			for(u16 y = 0; y < m_ss.Height; y++) {
 				u32 i = x*3 + y*3*m_ss.Width;
-				u32 j = x + TY*m_ss.Width;
-				//printf("(x|y) » (%d|%d) j=%d\n", x, y, j);
-				u32 k = HALF16(x) + HALF16(TY)*m_hss.Width;
 				unsigned char r = img[i];
 				unsigned char g = img[i+1];
 				unsigned char b = img[i+2];
+				u32 j = x + TY*m_ss.Width;
 				outy[j] = RGB2Y(r, g, b);
-				outu[k] = RGB2U(r, g, b);
-				outv[k] = RGB2V(r, g, b);
+				outu[j] = RGB2U(r, g, b);
+				outv[j] = RGB2V(r, g, b);
 			}
 		}
-#undef HALF16
 #undef TY
 		free(img);
 
-		// Encode
 		x264_nal_t* nals;
 		int i_nals;
 		x264_picture_t pic_out;
@@ -340,8 +332,8 @@ void * EncodeThread::Thread()
 		pic_in.img.plane[1] = outu;
 		pic_in.img.plane[2] = outv;
 		pic_in.img.i_stride[0] = m_ss.Width;
-		pic_in.img.i_stride[1] = m_hss.Width;
-		pic_in.img.i_stride[2] = m_hss.Width;
+		pic_in.img.i_stride[1] = m_ss.Width;
+		pic_in.img.i_stride[2] = m_ss.Width;
 		pic_in.img.i_plane = 3;
 		int frame_size = x264_encoder_encode(m_encoder, &nals, &i_nals, &pic_in, &pic_out);
 		if(frame_size > 0)
@@ -2322,6 +2314,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 					param.i_fps_den = 1;
 					param.i_timebase_num = 0;
 					param.i_timebase_den = 1;
+					param.i_csp = X264_CSP_I444;
 					param.b_intra_refresh = 0;
 					param.b_annexb = 1;
 					param.b_repeat_headers = 1;

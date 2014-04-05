@@ -116,9 +116,9 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("video_frameskip", "0");
 	settings->setDefault("video_crf", "25");
 	settings->setDefault("video_crf_max", "30");
-	settings->setDefault("video_preset", "faster");
+	settings->setDefault("video_preset", "veryfast");
 	settings->setDefault("video_tune", "zerolatency");
-	settings->setDefault("video_profile", "high");
+	settings->setDefault("video_profile", "high444");
 	settings->setDefault("video_threads", "2");
 	settings->setDefault("view_bobbing_amount", "1.0");
 	settings->setDefault("fall_bobbing_amount", "0.0");
