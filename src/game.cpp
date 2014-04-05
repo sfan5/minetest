@@ -2295,7 +2295,15 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 			}
 			else
 			{
-
+				if(screensize.X % 2 != 0 || screensize.Y % 2 != 0)
+				{
+					std::wstringstream sstr;
+					sstr<<"Failed to start Recording: Window is not evenly sized ("
+						<<screensize.X<<"x"<<screensize.Y<<")";
+					statustext = sstr.str();
+					statustext_time = 0;
+				} else
+				{
 				irr::c8 filename[256];
 				snprintf(filename, 256, "%s" DIR_DELIM "video_%u.h264",
 						 g_settings->get("video_path").c_str(),
@@ -2340,6 +2348,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 					sstr<<"Failed to open file!";
 					statustext = sstr.str();
 					statustext_time = 0;
+				}
 				}
 			}
 		}
