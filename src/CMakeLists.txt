@@ -167,8 +167,11 @@ else()
 	endif(BUILD_CLIENT)
 	find_package(ZLIB REQUIRED)
 	if(ANDROID)
-		set(PLATFORM_LIBS "-landroid -llog -Wl,-Bstatic -lcrystax -Wl,-Bdynamic" ${CMAKE_DL_LIBS})
-		# Do not touch the above line, I spent like 2 hours figuring out a way for cmake not to touch my linking flags
+		find_library(ANDROID_SUPPORT_LIBRARY libandroid_support)
+		find_path(ANDROID_SUPPORT_INCLUDE_DIR iconv.h)
+
+		include_directories(${ANDROID_SUPPORT_INCLUDE_DIR})
+		set(PLATFORM_LIBS -landroid -llog ${ANDROID_SUPPORT_LIBRARY} ${CMAKE_DL_LIBS})
 		set(CLIENT_PLATFORM_LIBS -lEGL -lGLESv1_CM -lGLESv2 -lOpenSLES ${CMAKE_DL_LIBS})
 	else(ANDROID)
 		set(PLATFORM_LIBS -lpthread -lrt ${CMAKE_DL_LIBS})
@@ -480,7 +483,6 @@ if(ANDROID)
 	set(minetest_SRCS
 		${minetest_SRCS}
 		android/android_native_app_glue.c
-		android/workarounds.c
 	)
 endif(ANDROID)
 

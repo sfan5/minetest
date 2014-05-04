@@ -819,7 +819,8 @@ extern "C" void android_main(struct android_app* app)
 	jvm->AttachCurrentThread(&jnienv, &lJavaVMAttachArgs); // Attach our thread to the JVM, we need this to call java methods
 	const char *av[] = {
 		"minetest",
-#ifndef NDEBUG
+//#ifndef NDEBUG
+#if 1
 		"--verbose", "--disable-unittests",
 #endif
 	};
