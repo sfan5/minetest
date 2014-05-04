@@ -1634,6 +1634,27 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		screensize.X-jpadsize-(screensize.X/jmargindiv),
 		screensize.Y-jpadsize-(screensize.Y/jmargindiv));
 
+	video::ITexture *ctrlpad_tex = NULL;
+	{
+		video::IImage *temp;
+		std::string path = porting::path_share + DIR_DELIM + "textures"
+		+ DIR_DELIM + "base" + DIR_DELIM + "pack"
+		+ DIR_DELIM + "controlpad.png";
+		temp = driver->createImageFromFile(path.c_str());
+		if(temp)
+			ctrlpad_tex = driver->addTexture("controlpad", temp);
+	}
+	video::ITexture *button_tex = NULL;
+	{
+		video::IImage *temp;
+		std::string path = porting::path_share + DIR_DELIM + "textures"
+		+ DIR_DELIM + "base" + DIR_DELIM + "pack"
+		+ DIR_DELIM + "button.png";
+		temp = driver->createImageFromFile(path.c_str());
+		if(temp)
+			button_tex = driver->addTexture("button", temp);
+	}
+
 	/*
 		Shader constants
 	*/
@@ -3681,28 +3702,45 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		/*
 			Draw touchscreen controls
 		*/
-		if(g_settings->getBool("touchscreen"))
-		{
-			// Right pad (moving)
-			driver->draw2DRectangle(video::SColor(128,255,255,255),
-				core::rect<s32>(rpadbase.X,rpadbase.Y,rpadbase.X+rpadsize,rpadbase.Y+rpadsize),
-				NULL);
-			driver->draw2DRectangle(video::SColor(255,255,0,0),
-				core::rect<s32>(rpadbase.X+(rpadsize/2.0)-1,rpadbase.Y+(rpadsize/2.0)-1,
-				rpadbase.X+(rpadsize/2.0)+1,rpadbase.Y+(rpadsize/2.0)+1),
-				NULL);
-			// Left pad (looking around)
-			driver->draw2DRectangle(video::SColor(128,255,255,255),
-				core::rect<s32>(lpadbase.X,lpadbase.Y,lpadbase.X+lpadsize,lpadbase.Y+lpadsize),
-				NULL);
-			driver->draw2DRectangle(video::SColor(255,0,0,255),
-				core::rect<s32>(lpadbase.X+(lpadsize/2.0)-1,lpadbase.Y+(lpadsize/2.0)-1,
-				lpadbase.X+(lpadsize/2.0)+1,lpadbase.Y+(lpadsize/2.0)+1),
-				NULL);
-			// Jump pad
-			driver->draw2DRectangle(video::SColor(128,255,255,255),
-				core::rect<s32>(jpadbase.X,jpadbase.Y,jpadbase.X+jpadsize,jpadbase.Y+jpadsize),
-				NULL);
+		if(g_settings->getBool("touchscreen")) {
+			if(ctrlpad_tex) {
+				driver->draw2DImage(ctrlpad_tex,
+					core::rect<s32>(lpadbase.X,lpadbase.Y,lpadbase.X+lpadsize,lpadbase.Y+lpadsize),
+					core::rect<s32>(0, 0, ctrlpad_tex->getSize().Width, ctrlpad_tex->getSize().Width),
+					0, 0, true);
+				driver->draw2DImage(ctrlpad_tex,
+					core::rect<s32>(rpadbase.X,rpadbase.Y,rpadbase.X+rpadsize,rpadbase.Y+rpadsize),
+					core::rect<s32>(0, 0, ctrlpad_tex->getSize().Width, ctrlpad_tex->getSize().Width),
+					0, 0, true);
+			} else {
+				// Right pad (moving)
+				driver->draw2DRectangle(video::SColor(128,255,255,255),
+					core::rect<s32>(rpadbase.X,rpadbase.Y,rpadbase.X+rpadsize,rpadbase.Y+rpadsize),
+					NULL);
+				driver->draw2DRectangle(video::SColor(255,255,0,0),
+					core::rect<s32>(rpadbase.X+(rpadsize/2.0)-1,rpadbase.Y+(rpadsize/2.0)-1,
+					rpadbase.X+(rpadsize/2.0)+1,rpadbase.Y+(rpadsize/2.0)+1),
+					NULL);
+				// Left pad (looking around)
+				driver->draw2DRectangle(video::SColor(128,255,255,255),
+					core::rect<s32>(lpadbase.X,lpadbase.Y,lpadbase.X+lpadsize,lpadbase.Y+lpadsize),
+					NULL);
+				driver->draw2DRectangle(video::SColor(255,0,0,255),
+					core::rect<s32>(lpadbase.X+(lpadsize/2.0)-1,lpadbase.Y+(lpadsize/2.0)-1,
+					lpadbase.X+(lpadsize/2.0)+1,lpadbase.Y+(lpadsize/2.0)+1),
+					NULL);
+			}
+			if(button_tex) {
+				driver->draw2DImage(button_tex,
+					core::rect<s32>(jpadbase.X,jpadbase.Y,jpadbase.X+jpadsize,jpadbase.Y+jpadsize),
+					core::rect<s32>(0, 0, button_tex->getSize().Width, button_tex->getSize().Width),
+					0, 0, true);
+			} else {
+				// Jump pad
+				driver->draw2DRectangle(video::SColor(128,255,255,255),
+					core::rect<s32>(jpadbase.X,jpadbase.Y,jpadbase.X+jpadsize,jpadbase.Y+jpadsize),
+					NULL);
+			}
 		}
 
 
