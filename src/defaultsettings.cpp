@@ -120,6 +120,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("video_tune", "zerolatency");
 	settings->setDefault("video_profile", "high444");
 	settings->setDefault("video_threads", "2");
+	settings->setDefault("video_fps", "30");
+	settings->setDefault("video_fps_smooth", "false");
 	settings->setDefault("view_bobbing_amount", "1.0");
 	settings->setDefault("fall_bobbing_amount", "0.0");
 	settings->setDefault("enable_3d_clouds", "true");

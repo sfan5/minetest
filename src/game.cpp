@@ -294,10 +294,8 @@ void * EncodeThread::Thread()
 	unsigned char *outu = (unsigned char*) malloc(m_ss.Width * m_ss.Height);
 	unsigned char *outv = (unsigned char*) malloc(m_ss.Width * m_ss.Height);
 
-	while(!StopRequested())
-	{
-		if(m_queue->size() == 0)
-		{
+	while (!StopRequested()) {
+		if (m_queue->size() == 0) {
 			sleep_ms(10);
 			continue;
 		}
@@ -310,8 +308,8 @@ void * EncodeThread::Thread()
 		x264_encoder_reconfig(m_encoder, &param);*/
 
 #define TY (m_ss.Height-y-1)
-		for(u16 x = 0; x < m_ss.Width; x++) {
-			for(u16 y = 0; y < m_ss.Height; y++) {
+		for (u16 x = 0; x < m_ss.Width; x++) {
+			for (u16 y = 0; y < m_ss.Height; y++) {
 				u32 i = x*3 + y*3*m_ss.Width;
 				unsigned char r = img[i];
 				unsigned char g = img[i+1];
@@ -336,8 +334,7 @@ void * EncodeThread::Thread()
 		pic_in.img.i_stride[2] = m_ss.Width;
 		pic_in.img.i_plane = 3;
 		int frame_size = x264_encoder_encode(m_encoder, &nals, &i_nals, &pic_in, &pic_out);
-		if(frame_size > 0)
-		{
+		if (frame_size > 0) {
 			fwrite((char*) nals[0].p_payload, frame_size, 1, m_dest);
 		}
 
@@ -1828,6 +1825,9 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 			dtime = 0;
 		lasttime = time;
 
+		if (recording && g_settings->getBool("video_fps_smooth") && 1. / dtime < g_settings->getU16("video_fps"))
+			dtime = 1. / g_settings->getU16("video_fps");
+
 		g_profiler->graphAdd("mainloop_dtime", dtime);
 
 		/* Run timers */
@@ -2318,7 +2318,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 					param.i_threads = g_settings->getU16("video_threads");
 					param.i_width = screensize.X;
 					param.i_height = screensize.Y;
-					param.i_fps_num = 1./dtime;
+					param.i_fps_num = g_settings->getU16("video_fps");
 					param.i_fps_den = 1;
 					param.i_timebase_num = 0;
 					param.i_timebase_den = 1;
@@ -3461,6 +3461,13 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		}
 		else if(recording || rec_encodethread.IsRunning())
 		{
+			core::rect<s32> rect(
+				5,
+				5 + text_height,
+				screensize.X,
+				5 + (text_height * 2)
+			);
+			guitext2->setRelativePosition(rect);
 			guitext2->setVisible(true);
 		}
 		else
