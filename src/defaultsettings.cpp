@@ -61,6 +61,9 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("keymap_toggle_debug", "KEY_F5");
 	settings->setDefault("keymap_toggle_profiler", "KEY_F6");
 	settings->setDefault("keymap_camera_mode", "KEY_F7");
+	settings->setDefault("keymap_huge_screenshot", "KEY_F11");
+	settings->setDefault("huge_screenshot_width", "7680");
+	settings->setDefault("huge_screenshot_height", "4320");
 	settings->setDefault("keymap_increase_viewing_range_min", "+");
 	settings->setDefault("keymap_decrease_viewing_range_min", "-");
 	settings->setDefault("enable_build_where_you_stand", "false" );

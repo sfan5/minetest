@@ -56,6 +56,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "server.h"
 #include "database.h"
 #include "database-sqlite3.h"
+#include "sky.h" // for Sky
+#include "camera.h" // for Camera
+#include <ISceneManager.h> // for ISceneManager
 
 extern gui::IGUIEnvironment* guienv;
 
@@ -2794,6 +2797,54 @@ void Client::makeScreenshot(IrrlichtDevice *device)
 		}
 		raw_image->drop();
 	}
+}
+
+void Client::makeHugeScreenshot(IrrlichtDevice *device, Sky *sky, scene::ISceneManager *smgr, Camera *cam)
+{
+	irr::video::IVideoDriver *driver = device->getVideoDriver();
+	video::ITexture* rt;
+	rt = driver->addRenderTargetTexture(
+			core::dimension2d<u32>(
+				g_settings->getU16("huge_screenshot_width"),
+				g_settings->getU16("huge_screenshot_height")
+			), "huge screenshot RT");
+	driver->setRenderTarget(rt, true, true, video::SColor(0,0,0,255));
+	driver->beginScene(true, true, sky->getSkyColor());
+	// Render
+	smgr->drawAll();
+	video::SMaterial m;
+	m.Thickness = 3;
+	m.Lighting = false;
+	driver->setMaterial(m);
+	driver->setTransform(video::ETS_WORLD, core::IdentityMatrix);
+	m_env.getClientMap().renderPostFx(cam->getCameraMode());
+	driver->endScene();
+	driver->setRenderTarget(0, true, true, 0);
+	// Convert to image and save
+	video::IImage* raw_image = driver->createImageFromData(
+		rt->getColorFormat(),
+		rt->getSize(),
+		rt->lock(),
+		false
+	);
+	rt->unlock();
+	rt->drop();
+	irr::video::IImage* const image = driver->createImage(video::ECF_R8G8B8,
+			raw_image->getDimension());
+	raw_image->copyTo(image);
+	irr::c8 filename[256]; 
+	snprintf(filename, sizeof(filename), "%s" DIR_DELIM "screenshot_%u.png",
+		g_settings->get("screenshot_path").c_str(),
+		device->getTimer()->getRealTime());
+	std::ostringstream sstr;
+	if (driver->writeImageToFile(image, filename)) {
+		sstr << "Saved screenshot to '" << filename << "'";
+	} else {
+		sstr << "Failed to save screenshot '" << filename << "'";
+	}
+	m_chat_queue.push_back(narrow_to_wide(sstr.str()));
+	infostream << sstr.str() << std::endl;
+	image->drop();
 }
 
 // IGameDef interface

@@ -48,6 +48,8 @@ class MtEventManager;
 struct PointedThing;
 class Database;
 class Server;
+class Sky;
+class Camera;
 
 struct QueuedMeshUpdate
 {
@@ -469,6 +471,7 @@ public:
 	LocalClientState getState() { return m_state; }
 
 	void makeScreenshot(IrrlichtDevice *device);
+	void makeHugeScreenshot(IrrlichtDevice *device, Sky *sky, scene::ISceneManager *smgr, Camera *cam);
 
 private:
 

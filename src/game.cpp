@@ -1233,6 +1233,7 @@ struct KeyCache {
 		KEYMAP_ID_FASTMOVE,
 		KEYMAP_ID_NOCLIP,
 		KEYMAP_ID_SCREENSHOT,
+		KEYMAP_ID_HUGE_SCREENSHOT,
 		KEYMAP_ID_TOGGLE_HUD,
 		KEYMAP_ID_TOGGLE_CHAT,
 		KEYMAP_ID_TOGGLE_FORCE_FOG_OFF,
@@ -1281,6 +1282,8 @@ void KeyCache::populate()
 	key[KEYMAP_ID_FASTMOVE]     = getKeySetting("keymap_fastmove");
 	key[KEYMAP_ID_NOCLIP]       = getKeySetting("keymap_noclip");
 	key[KEYMAP_ID_SCREENSHOT]   = getKeySetting("keymap_screenshot");
+	key[KEYMAP_ID_HUGE_SCREENSHOT]
+			= getKeySetting("keymap_huge_screenshot");
 	key[KEYMAP_ID_TOGGLE_HUD]   = getKeySetting("keymap_toggle_hud");
 	key[KEYMAP_ID_TOGGLE_CHAT]  = getKeySetting("keymap_toggle_chat");
 	key[KEYMAP_ID_TOGGLE_FORCE_FOG_OFF]
@@ -2542,6 +2545,8 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 		toggleNoClip(statustext_time);
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_SCREENSHOT])) {
 		client->makeScreenshot(device);
+	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_HUGE_SCREENSHOT])) {
+		client->makeHugeScreenshot(device, sky, smgr, camera);
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_TOGGLE_HUD])) {
 		toggleHud(statustext_time, &flags->show_hud);
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_TOGGLE_CHAT])) {
