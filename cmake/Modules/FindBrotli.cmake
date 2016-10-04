@@ -1,6 +1,6 @@
 mark_as_advanced(BROTLIENC_LIBRARY BROTLIDEC_LIBRARY BROTLI_LIBRARIES BROTLI_INCLUDE_DIR)
 
-find_path(BROTLI_INCLUDE_DIR NAMES common.h enc/encode.h dec/decode.h PATH_SUFFIXES brotli)
+find_path(BROTLI_INCLUDE_DIR NAMES encode.h decode.h PATH_SUFFIXES brotli)
 
 find_library(BROTLIENC_LIBRARY NAMES brotlienc)
 find_library(BROTLIDEC_LIBRARY NAMES brotlidec)
