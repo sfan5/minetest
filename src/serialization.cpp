@@ -279,7 +279,7 @@ void decompressBrotli(std::istream &is, std::ostream &os)
 			for (u32 i = 0; i < input_bufsize; i++) {
 				is.unget();
 				if (is.fail() || is.bad())
-					throw SerializationError("decompressZlib: unget failed");
+					throw SerializationError("decompressBrotli: unget failed");
 			}
 
 			break;
