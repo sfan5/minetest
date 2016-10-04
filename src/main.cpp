@@ -114,6 +114,7 @@ static bool determine_subgame(GameParams *game_params);
 static bool run_dedicated_server(const GameParams &game_params, const Settings &cmd_args);
 static bool migrate_database(const GameParams &game_params, const Settings &cmd_args);
 static bool recompress_database(const GameParams &game_params, const Settings &cmd_args);
+static bool decompresstimes_database(const GameParams &game_params, const Settings &cmd_args);
 
 /**********************************************************************/
 
@@ -298,6 +299,7 @@ static void set_allowed_options(OptionList *allowed_options)
 	allowed_options->insert(std::make_pair("migrate", ValueSpec(VALUETYPE_STRING,
 			_("Migrate from current map backend to another (Only works when using minetestserver or with --server)"))));
 	allowed_options->insert(std::make_pair("recompress", ValueSpec(VALUETYPE_FLAG, "")));
+	allowed_options->insert(std::make_pair("decompresstimes", ValueSpec(VALUETYPE_FLAG, "")));
 	allowed_options->insert(std::make_pair("terminal", ValueSpec(VALUETYPE_FLAG,
 			_("Feature an interactive terminal (Only works when using minetestserver or with --server)"))));
 #ifndef SERVER
@@ -830,11 +832,14 @@ static bool run_dedicated_server(const GameParams &game_params, const Settings &
 		return false;
 	}
 
-	// Database migration or recompression
+	// Database migration
 	if (cmd_args.exists("migrate"))
 		return migrate_database(game_params, cmd_args);
+
 	if (cmd_args.getFlag("recompress"))
 		return recompress_database(game_params, cmd_args);
+	if (cmd_args.getFlag("decompresstimes"))
+		return decompresstimes_database(game_params, cmd_args);
 
 	if (cmd_args.exists("terminal")) {
 #if USE_CURSES
@@ -1039,6 +1044,60 @@ static bool recompress_database(const GameParams &game_params, const Settings &c
 	db->endSave();
 
 	actionstream << "Successfully recompressed " << count << " blocks" << std::endl;
+
+	return true;
+}
+
+float g_decomptime;
+u32 g_compdata;
+
+static bool decompresstimes_database(const GameParams &game_params, const Settings &cmd_args)
+{
+	Settings world_mt;
+	std::string world_mt_path = game_params.world_path + DIR_DELIM + "world.mt";
+	if (!world_mt.readConfigFile(world_mt_path.c_str())) {
+		errorstream << "Cannot read world.mt!" << std::endl;
+		return false;
+	}
+	Server server(game_params.world_path, game_params.game_spec, false, false);
+	Database *db = ((ServerMap*) &server.getMap())->dbase;
+
+	u32 count = 0;
+	time_t last_update_time = 0;
+	bool &kill = *porting::signal_handler_killstatus();
+	g_decomptime = 0.0;
+	g_compdata = 0;
+
+	// This is ok because the server doesn't actually run
+	std::vector<v3s16> blocks;
+	db->listAllLoadableBlocks(blocks);
+	for (std::vector<v3s16>::const_iterator it = blocks.begin(); it != blocks.end(); ++it) {
+		if (kill) return false;
+
+		std::string data;
+		db->loadBlock(*it, &data);
+		if (data.empty()) {
+			errorstream << "Failed to load block " << PP(*it) << std::endl;
+			return false;
+		}
+
+		std::istringstream iss(data);
+		u8 ver = readU8(iss);
+		MapBlock mb(NULL, v3s16(0,0,0), &server);
+		mb.deSerialize(iss, ver, false);
+
+		if (++count % 0xFF == 0 && time(NULL) - last_update_time >= 2) {
+			std::cerr << (100.0 * count / blocks.size()) << "% completed\r";
+			last_update_time = time(NULL);
+		}
+	}
+	std::cerr << std::endl;
+
+	actionstream << "############" << std::endl;
+	actionstream << "Total decompression CPU time:     " << g_decomptime << "s" << std::endl;
+	actionstream << "Decompression CPU time per block: " << (g_decomptime / count * 1000 * 1000) << "us" << std::endl;
+	actionstream << "Decompression speed:              " << (g_compdata / g_decomptime / 1024) << " KB/s" << std::endl;
+	actionstream << "############" << std::endl;
 
 	return true;
 }

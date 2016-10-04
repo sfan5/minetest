@@ -26,6 +26,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <zlib.h>
 #include <brotli/decode.h>
 #include <brotli/encode.h>
+#include <time.h>
+
+extern float g_decomptime;
+extern u32 g_compdata;
 
 /* report a zlib or i/o error */
 void zerr(int ret)
@@ -340,7 +344,7 @@ void compress(const std::string &data, std::ostream &os, u8 version)
 	compress(databuf, os, version);
 }
 
-void decompress(std::istream &is, std::ostream &os, u8 version)
+static void _decompress(std::istream &is, std::ostream &os, u8 version)
 {
 	if (version >= 26) {
 		decompressBrotli(is, os);
@@ -380,4 +384,13 @@ void decompress(std::istream &is, std::ostream &os, u8 version)
 	}
 }
 
-
+void decompress(std::istream &is, std::ostream &os, u8 version)
+{
+	clock_t t = clock();
+	std::streampos l = is.tellg();
+	_decompress(is, os, version);
+	t = clock() - t;
+	l = is.tellg() - l;
+	g_decomptime += (float)t / CLOCKS_PER_SEC;
+	g_compdata += l;
+}
