@@ -505,6 +505,7 @@ public:
 	s16 getWaterLevel();
 
 	MapSettingsManager settings_mgr;
+	Database *dbase;
 
 private:
 	// Emerge manager
@@ -526,7 +527,6 @@ private:
 		This is reset to false when written on disk.
 	*/
 	bool m_map_metadata_changed;
-	Database *dbase;
 };
 
 

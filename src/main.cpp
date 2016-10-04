@@ -51,6 +51,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "gameparams.h"
 #include "database.h"
 #include "config.h"
+#include "util/serialize.h"
 #if USE_CURSES
 	#include "terminal_chat_console.h"
 #endif
@@ -112,6 +113,7 @@ static bool determine_subgame(GameParams *game_params);
 
 static bool run_dedicated_server(const GameParams &game_params, const Settings &cmd_args);
 static bool migrate_database(const GameParams &game_params, const Settings &cmd_args);
+static bool recompress_database(const GameParams &game_params, const Settings &cmd_args);
 
 /**********************************************************************/
 
@@ -295,6 +297,7 @@ static void set_allowed_options(OptionList *allowed_options)
 			_("Set gameid (\"--gameid list\" prints available ones)"))));
 	allowed_options->insert(std::make_pair("migrate", ValueSpec(VALUETYPE_STRING,
 			_("Migrate from current map backend to another (Only works when using minetestserver or with --server)"))));
+	allowed_options->insert(std::make_pair("recompress", ValueSpec(VALUETYPE_FLAG, "")));
 	allowed_options->insert(std::make_pair("terminal", ValueSpec(VALUETYPE_FLAG,
 			_("Feature an interactive terminal (Only works when using minetestserver or with --server)"))));
 #ifndef SERVER
@@ -827,9 +830,11 @@ static bool run_dedicated_server(const GameParams &game_params, const Settings &
 		return false;
 	}
 
-	// Database migration
+	// Database migration or recompression
 	if (cmd_args.exists("migrate"))
 		return migrate_database(game_params, cmd_args);
+	if (cmd_args.getFlag("recompress"))
+		return recompress_database(game_params, cmd_args);
 
 	if (cmd_args.exists("terminal")) {
 #if USE_CURSES
@@ -974,6 +979,66 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 		errorstream << "Failed to update world.mt!" << std::endl;
 	else
 		actionstream << "world.mt updated" << std::endl;
+
+	return true;
+}
+
+static bool recompress_database(const GameParams &game_params, const Settings &cmd_args)
+{
+	Settings world_mt;
+	std::string world_mt_path = game_params.world_path + DIR_DELIM + "world.mt";
+	if (!world_mt.readConfigFile(world_mt_path.c_str())) {
+		errorstream << "Cannot read world.mt!" << std::endl;
+		return false;
+	}
+	Server server(game_params.world_path, game_params.game_spec, false, false);
+	Database *db = ((ServerMap*) &server.getMap())->dbase;
+
+	u32 count = 0;
+	time_t last_update_time = 0;
+	bool &kill = *porting::signal_handler_killstatus();
+	const u8 serialize_as_ver = SER_FMT_VER_HIGHEST_WRITE;
+
+	// This is ok because the server doesn't actually run
+	std::vector<v3s16> blocks;
+	db->listAllLoadableBlocks(blocks);
+	db->beginSave();
+	for (std::vector<v3s16>::const_iterator it = blocks.begin(); it != blocks.end(); ++it) {
+		if (kill) return false;
+
+		std::string data;
+		db->loadBlock(*it, &data);
+		if (data.empty()) {
+			errorstream << "Failed to load block " << PP(*it) << std::endl;
+			return false;
+		}
+
+		std::istringstream iss(data);
+		u8 ver = readU8(iss);
+		if (ver != serialize_as_ver) {
+			MapBlock mb(NULL, v3s16(0,0,0), &server);
+			mb.deSerialize(iss, ver, true);
+
+			std::ostringstream oss;
+			writeU8(oss, serialize_as_ver);
+			mb.serialize(oss, serialize_as_ver, true);
+
+			db->saveBlock(*it, oss.str());
+		}
+
+
+		if (++count % 0xFF == 0 && time(NULL) - last_update_time >= 1) {
+			std::cerr << " Recompressed " << count << " blocks, "
+				<< (100.0 * count / blocks.size()) << "% completed.\r";
+			db->endSave();
+			db->beginSave();
+			last_update_time = time(NULL);
+		}
+	}
+	std::cerr << std::endl;
+	db->endSave();
+
+	actionstream << "Successfully recompressed " << count << " blocks" << std::endl;
 
 	return true;
 }
