@@ -37,6 +37,7 @@ public:
 	void testRLECompression();
 	void testZlibCompression();
 	void testZlibLargeData();
+	void testBrotliLargeData();
 };
 
 static TestCompression g_test_instance;
@@ -46,6 +47,7 @@ void TestCompression::runTests(IGameDef *gamedef)
 	TEST(testRLECompression);
 	TEST(testZlibCompression);
 	TEST(testZlibLargeData);
+	TEST(testBrotliLargeData);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -108,7 +110,7 @@ void TestCompression::testZlibCompression()
 	fromdata[3]=1;
 
 	std::ostringstream os(std::ios_base::binary);
-	compress(fromdata, os, SER_FMT_VER_HIGHEST_READ);
+	compressZlib(fromdata, os);
 
 	std::string str_out = os.str();
 
@@ -121,7 +123,7 @@ void TestCompression::testZlibCompression()
 	std::istringstream is(str_out, std::ios_base::binary);
 	std::ostringstream os2(std::ios_base::binary);
 
-	decompress(is, os2, SER_FMT_VER_HIGHEST_READ);
+	decompressZlib(is, os2);
 	std::string str_out2 = os2.str();
 
 	infostream << "decompress: ";
@@ -159,6 +161,42 @@ void TestCompression::testZlibLargeData()
 	std::ostringstream os_decompressed(std::ios::binary);
 	decompressZlib(is_compressed, os_decompressed);
 	infostream << "Test: Output size of large decompressZlib is "
+		<< os_decompressed.str().size() << std::endl;
+
+	std::string str_decompressed = os_decompressed.str();
+	UASSERTEQ(size_t, str_decompressed.size(), data_in.size());
+
+	for (u32 i = 0; i < size && i < str_decompressed.size(); i++) {
+		UTEST(str_decompressed[i] == data_in[i],
+				"index out[%i]=%i differs from in[%i]=%i",
+				i, str_decompressed[i], i, data_in[i]);
+	}
+}
+
+void TestCompression::testBrotliLargeData()
+{
+	infostream << "Test: Testing brotli wrappers with a large amount "
+		"of pseudorandom data" << std::endl;
+
+	u32 size = 50000;
+	infostream << "Test: Input size of large compressBrotli is "
+		<< size << std::endl;
+
+	std::string data_in;
+	data_in.resize(size);
+	PseudoRandom pseudorandom(9420);
+	for (u32 i = 0; i < size; i++)
+		data_in[i] = pseudorandom.range(0, 255);
+
+	std::ostringstream os_compressed(std::ios::binary);
+	compressBrotli(data_in, os_compressed);
+	infostream << "Test: Output size of large compressBrotli is "
+		<< os_compressed.str().size()<<std::endl;
+
+	std::istringstream is_compressed(os_compressed.str(), std::ios::binary);
+	std::ostringstream os_decompressed(std::ios::binary);
+	decompressBrotli(is_compressed, os_decompressed);
+	infostream << "Test: Output size of large decompressBrotli is "
 		<< os_decompressed.str().size() << std::endl;
 
 	std::string str_decompressed = os_decompressed.str();
