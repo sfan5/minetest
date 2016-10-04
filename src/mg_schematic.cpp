@@ -311,7 +311,7 @@ bool Schematic::deserializeFromMts(std::istream *is,
 	delete []schemdata;
 	schemdata = new MapNode[nodecount];
 
-	MapNode::deSerializeBulk(ss, SER_FMT_VER_HIGHEST_READ, schemdata,
+	MapNode::deSerializeBulk(ss, MTSCHEM_MAPNODE_SER_FMT_VER, schemdata,
 		nodecount, 2, 2, true);
 
 	// Fix probability values for nodes that were ignore; removed in v2
@@ -353,7 +353,7 @@ bool Schematic::serializeToMts(std::ostream *os,
 		ss << serializeString(names[i]); // node names
 
 	// compressed bulk node data
-	MapNode::serializeBulk(ss, SER_FMT_VER_HIGHEST_WRITE,
+	MapNode::serializeBulk(ss, MTSCHEM_MAPNODE_SER_FMT_VER,
 		schemdata, size.X * size.Y * size.Z, 2, 2, true);
 
 	return true;
