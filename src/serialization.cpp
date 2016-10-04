@@ -121,7 +121,7 @@ void decompressZlib(std::istream &is, std::ostream &os)
 
 	ret = inflateInit(&z);
 	if(ret != Z_OK)
-		throw SerializationError("dcompressZlib: inflateInit failed");
+		throw SerializationError("decompressZlib: inflateInit failed");
 	
 	z.avail_in = 0;
 	
@@ -248,7 +248,7 @@ void decompressBrotli(std::istream &is, std::ostream &os)
 
 	b = BrotliCreateState(NULL, NULL, NULL);
 	if(!b)
-		throw SerializationError("dcompressBrotli: BrotliCreateState failed");
+		throw SerializationError("decompressBrotli: BrotliCreateState failed");
 
 	input_bufsize = 0;
 
@@ -268,7 +268,7 @@ void decompressBrotli(std::istream &is, std::ostream &os)
 			&input_bufsize, &input_bufp,
 			&output_bufsize, &output_bufp, NULL, b);
 		if (status == BROTLI_RESULT_ERROR)
-			throw SerializationError("dcompressBrotli: BrotliDecompressStream failed");
+			throw SerializationError("decompressBrotli: BrotliDecompressStream failed");
 		int count = bufsize - output_bufsize;
 		if (count)
 			os.write(output_buffer, count);
