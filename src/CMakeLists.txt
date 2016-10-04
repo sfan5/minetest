@@ -334,6 +334,7 @@ else()
 		endif(APPLE)
 	endif(BUILD_CLIENT)
 	find_package(ZLIB REQUIRED)
+	find_package(Brotli REQUIRED)
 	set(PLATFORM_LIBS -lpthread ${CMAKE_DL_LIBS})
 	if(APPLE)
 		set(PLATFORM_LIBS "-framework CoreFoundation" ${PLATFORM_LIBS})
@@ -554,6 +555,7 @@ include_directories(
 	${PROJECT_SOURCE_DIR}
 	${IRRLICHT_INCLUDE_DIR}
 	${ZLIB_INCLUDE_DIR}
+	${BROTLI_INCLUDE_DIR}
 	${CMAKE_BUILD_TYPE}
 	${PNG_INCLUDE_DIR}
 	${GETTEXT_INCLUDE_DIR}
@@ -585,6 +587,7 @@ if(BUILD_CLIENT)
 	set(client_LIBS
 		${PROJECT_NAME}
 		${ZLIB_LIBRARIES}
+		${BROTLI_LIBRARIES}
 		${IRRLICHT_LIBRARY}
 		${OPENGL_LIBRARIES}
 		${JPEG_LIBRARIES}

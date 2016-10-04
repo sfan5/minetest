@@ -622,7 +622,7 @@ void MapNode::serializeBulk(std::ostream &os, int version,
 
 	if(compressed)
 	{
-		compressZlib(databuf, os);
+		compress(databuf, os, version);
 	}
 	else
 	{
@@ -649,7 +649,7 @@ void MapNode::deSerializeBulk(std::istream &is, int version,
 	if(compressed)
 	{
 		std::ostringstream os(std::ios_base::binary);
-		decompressZlib(is, os);
+		decompress(is, os, version);
 		std::string s = os.str();
 		if(s.size() != len)
 			throw SerializationError("deSerializeBulkNodes: "

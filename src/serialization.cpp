@@ -23,7 +23,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #if defined(_WIN32) && !defined(WIN32_NO_ZLIB_WINAPI)
 	#define ZLIB_WINAPI
 #endif
-#include "zlib.h"
+#include <zlib.h>
+#include <brotli/decode.h>
+#include <brotli/encode.h>
 
 /* report a zlib or i/o error */
 void zerr(int ret)
@@ -186,10 +188,113 @@ void decompressZlib(std::istream &is, std::ostream &os)
 	inflateEnd(&z);
 }
 
+void compressBrotli(SharedBuffer<u8> data, std::ostream &os, u8 quality)
+{
+	BrotliEncoderState* b;
+	const s32 bufsize = 16384;
+	char buffer[bufsize];
+	size_t output_bufsize;
+	u8* output_buffer;
+	size_t input_bufsize;
+	const u8* input_buffer;
+
+	b = BrotliEncoderCreateInstance(NULL, NULL, NULL);
+	if (!b)
+		throw SerializationError("compressBrotli: BrotliEncoderCreateInstance failed");
+	BrotliEncoderSetParameter(b, BROTLI_PARAM_QUALITY, quality);
+	BrotliEncoderSetParameter(b, BROTLI_PARAM_LGWIN, 22); // default from command-line tool
+
+	// Point brotli to our input buffer
+	input_buffer = &data[0];
+	input_bufsize = data.getSize();
+	// And get all output
+	for (;;) {
+		output_buffer = (u8*) buffer;
+		output_bufsize = bufsize;
+
+		int status = BrotliEncoderCompressStream(
+			b, BROTLI_OPERATION_FINISH,
+			&input_bufsize, &input_buffer,
+			&output_bufsize, &output_buffer, NULL);
+		if (!status)
+			throw SerializationError("compressBrotli: BrotliEncoderCompressStream failed");
+		int count = bufsize - output_bufsize;
+		if (count)
+			os.write(buffer, count);
+
+		if (!BrotliEncoderHasMoreOutput(b))
+			break;
+	}
+
+	BrotliEncoderDestroyInstance(b);
+}
+
+void compressBrotli(const std::string &data, std::ostream &os, u8 quality)
+{
+	SharedBuffer<u8> databuf((u8*)data.c_str(), data.size());
+	compressBrotli(databuf, os, quality);
+}
+
+void decompressBrotli(std::istream &is, std::ostream &os)
+{
+	BrotliState* b;
+	const s32 bufsize = 16384;
+	char input_buffer[bufsize];
+	char output_buffer[bufsize];
+	size_t output_bufsize;
+	u8* output_bufp;
+	size_t input_bufsize;
+	const u8* input_bufp;
+
+	b = BrotliCreateState(NULL, NULL, NULL);
+	if(!b)
+		throw SerializationError("dcompressBrotli: BrotliCreateState failed");
+
+	input_bufsize = 0;
+
+	for (;;) {
+		output_bufp = (u8*) output_buffer;
+		output_bufsize = bufsize;
+
+		if (input_bufsize == 0) {
+			input_bufp = (u8*) input_buffer;
+			is.read(input_buffer, bufsize);
+			input_bufsize = is.gcount();
+		}
+		if (input_bufsize == 0)
+			break;
+
+		BrotliResult status = BrotliDecompressStream(
+			&input_bufsize, &input_bufp,
+			&output_bufsize, &output_bufp, NULL, b);
+		if (status == BROTLI_RESULT_ERROR)
+			throw SerializationError("dcompressBrotli: BrotliDecompressStream failed");
+		int count = bufsize - output_bufsize;
+		if (count)
+			os.write(output_buffer, count);
+
+		if (status == BROTLI_RESULT_SUCCESS){
+			// Unget all the data that inflate didn't take
+			is.clear(); // Just in case EOF is set
+			for (u32 i = 0; i < input_bufsize; i++) {
+				is.unget();
+				if (is.fail() || is.bad())
+					throw SerializationError("decompressZlib: unget failed");
+			}
+
+			break;
+		}
+	}
+
+	BrotliDestroyState(b);
+}
+
 void compress(SharedBuffer<u8> data, std::ostream &os, u8 version)
 {
-	if(version >= 11)
-	{
+	if (version >= 26) {
+		compressBrotli(data, os);
+		return;
+	} else if (version >= 11) {
 		compressZlib(data, os);
 		return;
 	}
@@ -229,10 +334,18 @@ void compress(SharedBuffer<u8> data, std::ostream &os, u8 version)
 	os.write((char*)&current_byte, 1);
 }
 
+void compress(const std::string &data, std::ostream &os, u8 version)
+{
+	SharedBuffer<u8> databuf((u8*)data.c_str(), data.size());
+	compress(databuf, os, version);
+}
+
 void decompress(std::istream &is, std::ostream &os, u8 version)
 {
-	if(version >= 11)
-	{
+	if (version >= 26) {
+		decompressBrotli(is, os);
+		return;
+	} else if (version >= 11) {
 		decompressZlib(is, os);
 		return;
 	}

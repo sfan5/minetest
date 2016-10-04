@@ -61,14 +61,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	23: new node metadata format
 	24: 16-bit node ids and node timers (never released as stable)
 	25: Improved node timer format
-	26: Never written; read the same as 25
+	26: brotli'd blocks
 */
 // This represents an uninitialized or invalid format
 #define SER_FMT_VER_INVALID 255
 // Highest supported serialization version
 #define SER_FMT_VER_HIGHEST_READ 26
 // Saved on disk version
-#define SER_FMT_VER_HIGHEST_WRITE 25
+#define SER_FMT_VER_HIGHEST_WRITE 26
 // Lowest supported serialization version
 #define SER_FMT_VER_LOWEST_READ 0
 // Lowest serialization version for writing
@@ -88,9 +88,13 @@ void compressZlib(SharedBuffer<u8> data, std::ostream &os, int level = -1);
 void compressZlib(const std::string &data, std::ostream &os, int level = -1);
 void decompressZlib(std::istream &is, std::ostream &os);
 
-// These choose between zlib and a self-made one according to version
+void compressBrotli(SharedBuffer<u8> data, std::ostream &os, u8 quality=6);
+void compressBrotli(const std::string &data, std::ostream &os, u8 quality=6);
+void decompressBrotli(std::istream &is, std::ostream &os);
+
+// These choose between brotli, zlib and a self-made one according to version
 void compress(SharedBuffer<u8> data, std::ostream &os, u8 version);
-//void compress(const std::string &data, std::ostream &os, u8 version);
+void compress(const std::string &data, std::ostream &os, u8 version);
 void decompress(std::istream &is, std::ostream &os, u8 version);
 
 #endif
