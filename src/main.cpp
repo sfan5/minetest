@@ -988,6 +988,10 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 	return true;
 }
 
+
+float g_comptime;
+u32 g_decompdata;
+
 static bool recompress_database(const GameParams &game_params, const Settings &cmd_args)
 {
 	Settings world_mt;
@@ -1003,6 +1007,8 @@ static bool recompress_database(const GameParams &game_params, const Settings &c
 	time_t last_update_time = 0;
 	bool &kill = *porting::signal_handler_killstatus();
 	const u8 serialize_as_ver = SER_FMT_VER_HIGHEST_WRITE;
+	g_comptime = 0.0;
+	g_decompdata = 0;
 
 	// This is ok because the server doesn't actually run
 	std::vector<v3s16> blocks;
@@ -1043,7 +1049,13 @@ static bool recompress_database(const GameParams &game_params, const Settings &c
 	std::cerr << std::endl;
 	db->endSave();
 
-	actionstream << "Successfully recompressed " << count << " blocks" << std::endl;
+	actionstream << "############" << std::endl;
+	actionstream << "Recompressed blocks:            " << count << std::endl;
+	actionstream << "Total data (before comp.):      " << (g_decompdata / 1024 / 1024) << " MB" << std::endl;
+	actionstream << "Total compression CPU time:     " << g_comptime << "s" << std::endl;
+	actionstream << "Compression CPU time per block: " << (g_comptime / count * 1000 * 1000) << "us" << std::endl;
+	actionstream << "Compression speed:              " << (g_decompdata / g_comptime / 1024) << " KB/s" << std::endl;
+	actionstream << "############" << std::endl;
 
 	return true;
 }
@@ -1094,6 +1106,8 @@ static bool decompresstimes_database(const GameParams &game_params, const Settin
 	std::cerr << std::endl;
 
 	actionstream << "############" << std::endl;
+	actionstream << "Total blocks:                     " << count << std::endl;
+	actionstream << "Total data (comp.):               " << (g_compdata / 1024 / 1024) << " MB" << std::endl;
 	actionstream << "Total decompression CPU time:     " << g_decomptime << "s" << std::endl;
 	actionstream << "Decompression CPU time per block: " << (g_decomptime / count * 1000 * 1000) << "us" << std::endl;
 	actionstream << "Decompression speed:              " << (g_compdata / g_decomptime / 1024) << " KB/s" << std::endl;

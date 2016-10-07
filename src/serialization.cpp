@@ -31,6 +31,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 extern float g_decomptime;
 extern u32 g_compdata;
 
+extern float g_comptime;
+extern u32 g_decompdata;
+
 /* report a zlib or i/o error */
 void zerr(int ret)
 {   
@@ -293,7 +296,7 @@ void decompressBrotli(std::istream &is, std::ostream &os)
 	BrotliDestroyState(b);
 }
 
-void compress(SharedBuffer<u8> data, std::ostream &os, u8 version)
+static void _compress(SharedBuffer<u8> data, std::ostream &os, u8 version)
 {
 	if (version >= 26) {
 		compressBrotli(data, os);
@@ -336,6 +339,15 @@ void compress(SharedBuffer<u8> data, std::ostream &os, u8 version)
 	// write count and byte
 	os.write((char*)&more_count, 1);
 	os.write((char*)&current_byte, 1);
+}
+
+void compress(SharedBuffer<u8> data, std::ostream &os, u8 version)
+{
+	clock_t t = clock();
+	_compress(data, os, version);
+	t = clock() - t;
+	g_comptime += (float)t / CLOCKS_PER_SEC;
+	g_decompdata += data.getSize();
 }
 
 void compress(const std::string &data, std::ostream &os, u8 version)
