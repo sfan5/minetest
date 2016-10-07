@@ -113,6 +113,8 @@ static bool determine_subgame(GameParams *game_params);
 
 static bool run_dedicated_server(const GameParams &game_params, const Settings &cmd_args);
 static bool migrate_database(const GameParams &game_params, const Settings &cmd_args);
+
+static void recompress_fast25(std::istream &is, std::ostream &os);
 static bool recompress_database(const GameParams &game_params, const Settings &cmd_args);
 static bool decompresstimes_database(const GameParams &game_params, const Settings &cmd_args);
 
@@ -988,6 +990,37 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 	return true;
 }
 
+#define COPY(count) \
+	do { \
+		char _tmp[count]; \
+		is.read(_tmp, count); \
+		os.write(_tmp, count); \
+	} while (0)
+
+static void recompress_fast25(std::istream &is, std::ostream &os)
+{
+	COPY(1 + 1 + 1); // flags, content_width, params_width
+
+	{std::ostringstream tmp(std::ios_base::binary);
+	decompress(is, tmp, 25); // node data
+	compress(tmp.str(), os, 26);}
+
+	{std::ostringstream tmp(std::ios_base::binary);
+	decompress(is, tmp, 25); // metadata
+	compress(tmp.str(), os, 26);}
+
+	// all of the rest
+	while(1) {
+		char buf[512];
+		is.read(buf, sizeof(buf));
+		if(is.eof()) {
+			os.write(buf, is.gcount());
+			break;
+		} else {
+			os.write(buf, sizeof(buf));
+		}
+	}
+}
 
 float g_comptime;
 u32 g_decompdata;
@@ -1024,21 +1057,30 @@ static bool recompress_database(const GameParams &game_params, const Settings &c
 			return false;
 		}
 
-		std::istringstream iss(data);
+		std::istringstream iss(data, std::ios_base::binary);
 		u8 ver = readU8(iss);
-		if (ver != serialize_as_ver) {
+		if (ver == serialize_as_ver) {
+			// already on newest ser fmt ver
+		} else if(ver == 25) {
+			// we can recompress this easier
+			std::ostringstream oss(std::ios_base::binary);
+			writeU8(oss, serialize_as_ver);
+			recompress_fast25(iss, oss);
+
+			db->saveBlock(*it, oss.str());
+		} else {
+			// deserialize the mapblock as usual and then serialize it again
 			MapBlock mb(NULL, v3s16(0,0,0), &server);
 			mb.deSerialize(iss, ver, true);
 
-			std::ostringstream oss;
+			std::ostringstream oss(std::ios_base::binary);
 			writeU8(oss, serialize_as_ver);
 			mb.serialize(oss, serialize_as_ver, true);
 
 			db->saveBlock(*it, oss.str());
 		}
 
-
-		if (++count % 0xFF == 0 && time(NULL) - last_update_time >= 1) {
+		if (++count % 0xFF == 0 && time(NULL) - last_update_time >= 2) {
 			std::cerr << " Recompressed " << count << " blocks, "
 				<< (100.0 * count / blocks.size()) << "% completed.\r";
 			db->endSave();
@@ -1051,7 +1093,7 @@ static bool recompress_database(const GameParams &game_params, const Settings &c
 
 	actionstream << "############" << std::endl;
 	actionstream << "Recompressed blocks:            " << count << std::endl;
-	actionstream << "Total data (before comp.):      " << (g_decompdata / 1024 / 1024) << " MB" << std::endl;
+	actionstream << "Total data (uncomp.):           " << (g_decompdata / 1024 / 1024) << " MB" << std::endl;
 	actionstream << "Total compression CPU time:     " << g_comptime << "s" << std::endl;
 	actionstream << "Compression CPU time per block: " << (g_comptime / count * 1000 * 1000) << "us" << std::endl;
 	actionstream << "Compression speed:              " << (g_decompdata / g_comptime / 1024) << " KB/s" << std::endl;
@@ -1093,7 +1135,7 @@ static bool decompresstimes_database(const GameParams &game_params, const Settin
 			return false;
 		}
 
-		std::istringstream iss(data);
+		std::istringstream iss(data, std::ios_base::binary);
 		u8 ver = readU8(iss);
 		MapBlock mb(NULL, v3s16(0,0,0), &server);
 		mb.deSerialize(iss, ver, false);
