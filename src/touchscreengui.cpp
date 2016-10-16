@@ -815,7 +815,7 @@ void TouchScreenGUI::translateEvent(const SEvent &event)
 
 		if (m_move_id != -1) {
 			if ((event.TouchInput.ID == m_move_id) &&
-				(!m_move_sent_as_mouse_event)) {
+				(!m_move_sent_as_mouse_event || !g_settings->getBool("touchtarget"))) {
 
 				double distance = sqrt(
 						(m_pointerpos[event.TouchInput.ID].X - event.TouchInput.X) *
