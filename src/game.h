@@ -119,6 +119,8 @@ public:
 	virtual void setMousePos(s32 x, s32 y) = 0;
 
 	virtual bool getLeftState() = 0;
+	virtual bool getMiddleState() = 0;
+	virtual void resetMiddleState() = 0; // TODO: handle middle button like all others
 	virtual bool getRightState() = 0;
 
 	virtual bool getLeftClicked() = 0;

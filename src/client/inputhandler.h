@@ -254,6 +254,14 @@ public:
 	{
 		return m_receiver->left_active;
 	}
+	virtual bool getMiddleState()
+	{
+		return m_receiver->middle_active;
+	}
+	virtual void resetMiddleState()
+	{
+		m_receiver->middle_active = false;
+	}
 	virtual bool getRightState()
 	{
 		return m_receiver->right_active;
@@ -343,6 +351,11 @@ public:
 	{
 		return leftdown;
 	}
+	virtual bool getMiddleState()
+	{
+		return false;
+	}
+	virtual void resetMiddleState() {}
 	virtual bool getRightState()
 	{
 		return rightdown;
