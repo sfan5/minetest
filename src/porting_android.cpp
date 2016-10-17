@@ -219,6 +219,7 @@ void initializePathsAndroid()
 			"getExternalStorageDirectory");
 	path_user    = path_storage + DIR_DELIM + PROJECT_NAME_C;
 	path_share   = path_storage + DIR_DELIM + PROJECT_NAME_C;
+	path_locale  = path_storage + DIR_DELIM + PROJECT_NAME_C + DIR_DELIM + "locale";
 
 	migrateCachePath();
 }

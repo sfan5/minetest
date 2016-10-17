@@ -24,12 +24,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "gettext.h"
 #include "util/string.h"
 #include "log.h"
+#include "filesys.h"
 
 #if USE_GETTEXT && defined(_MSC_VER)
 #include <windows.h>
 #include <map>
 #include <direct.h>
-#include "filesys.h"
 
 #define setlocale(category, localename) \
 	setlocale(category, MSVC_LocaleLookup(localename))
@@ -233,6 +233,22 @@ void init_gettext(const char *path, const std::string &configured_language,
 	/* char *codeset = */bind_textdomain_codeset( tdomain, "UTF-8" );
 	//errorstream << "Gettext debug: domainname = " << tdomain << "; codeset = "<< codeset << std::endl;
 #endif // defined(_WIN32)
+
+#if defined(__ANDROID__)
+	// On Android we use libintl-lite, we need to load .mo files manually
+	if (!configured_language.empty()) {
+		std::string mopath = path;
+		mopath += DIR_DELIM + configured_language
+				+ DIR_DELIM + "LC_MESSAGES"
+				+ DIR_DELIM + name
+				+ ".mo";
+		infostream << "Loading translations from file: " << mopath << std::endl;
+		int r = loadMessageCatalog(name.c_str(), mopath.c_str());
+		infostream << "  " << ( (r == 1)?"success":"failed" ) << std::endl;
+	} else {
+		infostream << "Language not configured, skipping load." << std::endl;
+	}
+#endif // defined(__ANDROID__)
 
 #else
 	/* set current system default locale */
