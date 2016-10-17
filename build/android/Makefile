@@ -789,7 +789,19 @@ assets : $(ASSETS_TIMESTAMP)
 	for mod in ${MODS_TO_COPY}; do                                             \
 	    cp -r ${PROJ_ROOT}/mods/$$mod ${APP_ROOT}/assets/Minetest/mods/;       \
 	done;                                                                      \
-	cp -r ${PROJ_ROOT}/po ${APP_ROOT}/assets/Minetest;                         \
+	mkdir -p ${APP_ROOT}/assets/Minetest/locale;                               \
+	cd ${PROJ_ROOT}/po;                                                        \
+	for lang in *; do                                                          \
+		[ $${#lang} -ne 2 ] && continue;                                       \
+		MOPATH=${APP_ROOT}/assets/Minetest/locale/$$lang/LC_MESSAGES;          \
+		mkdir -p $$MOPATH;                                                     \
+		cd $$lang;                                                             \
+		for fn in *.po; do                                                     \
+			newfn=$${fn/.po/.mo};                                              \
+			msgfmt -o $$MOPATH/$$newfn $$fn;                                   \
+		done;                                                                  \
+		cd ..;                                                                 \
+	done;                                                                      \
 	cp -r ${PROJ_ROOT}/textures ${APP_ROOT}/assets/Minetest;                   \
 	mkdir -p ${APP_ROOT}/assets/Minetest/media;                                \
 	cp -r ${IRRLICHT_DIR}/media/Shaders ${APP_ROOT}/assets/Minetest/media;     \
