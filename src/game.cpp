@@ -3798,6 +3798,8 @@ void Game::processPlayerInteraction(GameRunData *runData,
 
 	input->joystick.clearWasKeyReleased(KeyType::MOUSE_L);
 	input->joystick.clearWasKeyReleased(KeyType::MOUSE_R);
+
+	input->resetMiddleState();
 }
 
 
@@ -3912,7 +3914,14 @@ void Game::handlePointingAtObject(GameRunData *runData,
 			runData->selected_object->debugInfoText()));
 	}
 
-	if (isLeftPressed()) {
+#ifdef HAVE_TOUCHSCREENGUI
+	// Interact with object on single touch (touchscreengui.cpp send this event)
+	bool middle_state = input->getMiddleState();
+#else
+	const bool middle_state = false;
+#endif
+
+	if (isLeftPressed() || middle_state) {
 		bool do_punch = false;
 		bool do_punch_damage = false;
 
@@ -3922,7 +3931,7 @@ void Game::handlePointingAtObject(GameRunData *runData,
 			runData->object_hit_delay_timer = object_hit_delay;
 		}
 
-		if (getLeftClicked())
+		if (getLeftClicked() || middle_state)
 			do_punch = true;
 
 		if (do_punch) {
