@@ -126,6 +126,12 @@ ICONV_TIMESTAMP = $(ICONV_DIR)timestamp
 ICONV_TIMESTAMP_INT = $(ANDR_ROOT)/deps/iconv_timestamp
 ICONV_URL_HTTP = https://ftp.gnu.org/pub/gnu/libiconv/libiconv-$(ICONV_VERSION).tar.gz
 
+INTL_DIR = $(ANDR_ROOT)/deps/libintl/
+INTL_LIB = $(INTL_DIR)/libintl.a
+INTL_TIMESTAMP = $(INTL_DIR)timestamp
+INTL_TIMESTAMP_INT = $(ANDR_ROOT)/deps/intl_timestamp
+INTL_URL_HTTP = https://github.com/j-jorge/libintl-lite/archive/master.tar.gz
+
 SQLITE3_FOLDER = sqlite-amalgamation-3120200
 SQLITE3_URL = https://www.sqlite.org/2016/$(SQLITE3_FOLDER).zip
 
@@ -488,6 +494,61 @@ $(ICONV_LIB) : $(ICONV_TIMESTAMP)
 clean_iconv :
 	$(RM) -rf ${ICONV_DIR}
 
+$(INTL_TIMESTAMP) : intl_download
+	@LAST_MODIF=$$(find ${INTL_DIR} -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" "); \
+	if [ $$(basename $$LAST_MODIF) != "timestamp" ] ; then                     \
+		touch ${INTL_TIMESTAMP};                                           \
+	fi
+
+intl_download :
+	@if [ ! -d ${INTL_DIR} ] ; then                                        \
+		echo "libintl sources missing, downloading...";                    \
+		mkdir -p ${ANDR_ROOT}/deps;                                        \
+		cd ${ANDR_ROOT}/deps;                                              \
+		wget ${INTL_URL_HTTP} -O libintl.tar.gz || exit 1;                 \
+		tar -xzf libintl.tar.gz || exit 1;                                 \
+		rm libintl.tar.gz;                                                 \
+		ln -s libintl-lite-master libintl;                                 \
+	fi
+
+intl : $(INTL_LIB)
+
+$(INTL_LIB) : $(INTL_TIMESTAMP)
+	@REFRESH=0;                                                                \
+	if [ ! -e ${INTL_TIMESTAMP_INT} ] ; then                                   \
+		REFRESH=1;                                                             \
+	fi;                                                                        \
+	if [ ! -e ${INTL_LIB} ] ; then                                             \
+		REFRESH=1;                                                             \
+	fi;                                                                        \
+	if [ ${INTL_TIMESTAMP} -nt ${INTL_TIMESTAMP_INT} ] ; then                  \
+		REFRESH=1;                                                             \
+	fi;                                                                        \
+	if [ $$REFRESH -ne 0 ] ; then                                              \
+	mkdir -p ${INTL_DIR};                                                      \
+	echo "changed timestamp for intl detected building...";                    \
+	cd ${INTL_DIR};                                                            \
+	\
+	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-intl;                             \
+	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
+		--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                     \
+		--install-dir=$${TOOLCHAIN};                                           \
+	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
+	cd internal;                                                               \
+	${CROSS_PREFIX}g++ -O3 -c libintl.cpp -o libintl.o || exit 1;              \
+	${CROSS_PREFIX}ar rs ../libintl.a libintl.o || exit 1;                     \
+	cd ..;                                                                     \
+	touch ${INTL_TIMESTAMP};                                                   \
+	touch ${INTL_TIMESTAMP_INT};                                               \
+	rm -rf ${TOOLCHAIN};                                                       \
+	else                                                                       \
+		echo "nothing to be done for intl";                                    \
+	fi
+
+clean_intl :
+	$(RM) -rf ${INTL_DIR}
+
+
 #Note: Texturehack patch is required for gpu's not supporting color format
 #      correctly. Known bad GPU:
 #      -geforce on emulator
@@ -749,7 +810,7 @@ assets : $(ASSETS_TIMESTAMP)
 clean_assets :
 	@$(RM) -r assets
 
-apk: local.properties assets $(ICONV_LIB) $(IRRLICHT_LIB) $(CURL_LIB) $(GMP_LIB) $(LEVELDB_TARGET)       \
+apk: local.properties assets $(ICONV_LIB) $(INTL_LIB) $(IRRLICHT_LIB) $(CURL_LIB) $(GMP_LIB) $(LEVELDB_TARGET) \
 	$(OPENAL_LIB) $(OGG_LIB) prep_srcdir $(ANDR_ROOT)/jni/src/android_version.h    \
 	$(ANDR_ROOT)/jni/src/android_version_githash.h sqlite3_download
 	+ @${ANDROID_NDK}/ndk-build NDK_MODULE_PATH=${NDK_MODULE_PATH}             \
@@ -786,7 +847,7 @@ clean_apk :
 
 clean_all :
 	@$(MAKE) clean_apk;                                                        \
-	$(MAKE) clean_assets clean_iconv clean_irrlicht clean_leveldb clean_curl   \
+	$(MAKE) clean_assets clean_iconv clean_intl clean_irrlicht clean_leveldb clean_curl \
 	clean_openssl clean_openal clean_ogg clean_gmp;                            \
 	sleep 1;                                                                   \
 	$(RM) -r gen libs obj deps bin Debug and_env
