@@ -47,6 +47,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #if USE_LEVELDB
 #include "database-leveldb.h"
 #endif
+#if USE_ROCKSDB
+#include "database-rocksdb.h"
+#endif
 #if USE_REDIS
 #include "database-redis.h"
 #endif
@@ -3193,6 +3196,10 @@ Database *ServerMap::createDatabase(
 	#if USE_LEVELDB
 	else if (name == "leveldb")
 		return new Database_LevelDB(savedir);
+	#endif
+	#if USE_ROCKSDB
+	else if (name == "rocksdb")
+		return new Database_RocksDB(savedir);
 	#endif
 	#if USE_REDIS
 	else if (name == "redis")
