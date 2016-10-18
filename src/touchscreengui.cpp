@@ -722,7 +722,26 @@ void TouchScreenGUI::handleReleaseEvent(int evt_id)
 		}
 		else {
 			/* do double tap detection */
-			doubleTapDetection();
+			bool was_double_tap = doubleTapDetection();
+			/* send middle click for single touch */
+			if (!was_double_tap && !m_move_has_really_moved) {
+				// update shootline
+				m_shootline = m_device
+						->getSceneManager()
+						->getSceneCollisionManager()
+						->getRayFromScreenCoordinates(m_move_downlocation);
+
+				// send the event
+				SEvent *translated = new SEvent;
+				memset(translated, 0, sizeof(SEvent));
+				translated->EventType = EET_MOUSE_INPUT_EVENT;
+				translated->MouseInput.X = m_move_downlocation.X;
+				translated->MouseInput.Y = m_move_downlocation.Y;
+				translated->MouseInput.ButtonStates = EMBSM_MIDDLE; // << important!
+				translated->MouseInput.Event = EMIE_MMOUSE_LEFT_UP;
+				m_receiver->OnEvent(*translated);
+				delete translated;
+			}
 		}
 	}
 	else {
@@ -795,23 +814,6 @@ void TouchScreenGUI::translateEvent(const SEvent &event)
 				m_move_downtime            = getTimeMs();
 				m_move_downlocation        = v2s32(event.TouchInput.X, event.TouchInput.Y);
 				m_move_sent_as_mouse_event = false;
-
-				// update shootline (in case the game handles the event we send below)
-				m_shootline = m_device
-						->getSceneManager()
-						->getSceneCollisionManager()
-						->getRayFromScreenCoordinates(m_move_downlocation);
-
-				// send a middle click event so the game can handle single touches
-				SEvent *translated = new SEvent;
-				memset(translated, 0, sizeof(SEvent));
-				translated->EventType = EET_MOUSE_INPUT_EVENT;
-				translated->MouseInput.X = m_move_downlocation.X;
-				translated->MouseInput.Y = m_move_downlocation.Y;
-				translated->MouseInput.ButtonStates = EMBSM_MIDDLE; // << important!
-				translated->MouseInput.Event = EMIE_MMOUSE_LEFT_UP;
-				m_receiver->OnEvent(*translated);
-				delete translated;
 			}
 		}
 
