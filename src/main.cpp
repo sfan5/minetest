@@ -57,9 +57,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #ifndef SERVER
 #include "client/clientlauncher.h"
 #endif
-#ifdef __IOS__
-#include "wrapper.h"
-#endif
 
 #ifdef HAVE_TOUCHSCREENGUI
 	#include "touchscreengui.h"
@@ -173,9 +170,11 @@ int main(int argc, char *argv[])
 
 	porting::signal_handler_init();
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__)
 	porting::initAndroid();
 	porting::initializePathsAndroid();
+#elif defined(__IOS__)
+    porting::initializePathsiOS();
 #else
 	porting::initializePaths();
 #endif
@@ -262,7 +261,6 @@ void irrlicht_main() {
         PROJECT_NAME,
         "--verbose",
     };
-    wrapper_NSLog("irrlicht_main()");
     real_main(2, (char**) args);
 }
 #endif

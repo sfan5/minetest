@@ -383,5 +383,9 @@ bool secure_rand_fill_buf(void *buf, size_t len);
 #include "porting_android.h"
 #endif
 
+#ifdef __IOS__
+#include "porting_ios.h"
+#endif
+
 #endif // PORTING_HEADER
 

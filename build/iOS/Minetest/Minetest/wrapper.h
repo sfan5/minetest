@@ -4,9 +4,16 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
-    void wrapper_NSLog(const char *message);
-    
+
+enum {
+    WRAPPER_DOCUMENTS,
+    WRAPPER_LIBRARY_SUPPORT,
+    WRAPPER_LIBRARY_CACHE,
+};
+
+void wrapper_NSLog(const char *message);
+void wrapper_paths(int type, char *dest, size_t destlen);
+
 #ifdef __cplusplus
 }
 #endif
