@@ -383,6 +383,11 @@ void set_default_settings(Settings *settings)
 		settings->setDefault("hud_scaling", "0.7");
 	}
 	settings->setDefault("curl_verify_cert","false");
+#elif defined(__IOS__)
+    settings->setDefault("screenW", "0");
+    settings->setDefault("screenH", "0");
+    settings->setDefault("fullscreen", "false");
+    settings->setDefault("video_driver", "ogles2");
 #else
 	settings->setDefault("screen_dpi", "72");
 #endif

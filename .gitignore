@@ -92,6 +92,9 @@ timestamp
 ## iOS build files
 build/iOS/Minetest/Minetest.xcodeproj/xcuserdata
 build/iOS/Minetest/Minetest.xcodeproj/project.xcworkspace
+build/iOS/Minetest.xcworkspace
+build/iOS/Pods
+build/iOS/Podfile.lock
 build/iOS/deps/*
 !build/iOS/deps/*.sh
 build/iOS/assets.zip

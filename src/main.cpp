@@ -444,7 +444,7 @@ static bool create_userdata_path()
 {
 	bool success;
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(__IOS__)
 	if (!fs::PathExists(porting::path_user)) {
 		success = fs::CreateDir(porting::path_user);
 	} else {

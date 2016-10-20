@@ -7,6 +7,7 @@
 
 namespace porting {
     void initializePathsiOS();
+    void copyAssets();
 }
 
 #endif
