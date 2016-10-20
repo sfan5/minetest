@@ -49,9 +49,6 @@ static bool parseNamedColorString(const std::string &value, video::SColor &color
 bool convert(const char *to, const char *from, char *outbuf,
 		size_t outbuf_size, char *inbuf, size_t inbuf_size)
 {
-#ifdef __IOS__
-    return false;
-#else
 	iconv_t cd = iconv_open(to, from);
 
 #ifdef BSD_ICONV_USED
@@ -77,7 +74,6 @@ bool convert(const char *to, const char *from, char *outbuf,
 
 	iconv_close(cd);
 	return true;
-#endif
 }
 
 std::wstring utf8_to_wide(const std::string &input)
@@ -106,7 +102,7 @@ std::wstring utf8_to_wide(const std::string &input)
 	return out;
 }
 
-#if defined(__ANDROID__) || defined(__IOS__)
+#if defined(__ANDROID__)
 // TODO: this is an ugly fix for wide_to_utf8 somehow not working on android
 std::string wide_to_utf8(const std::wstring &input)
 {
