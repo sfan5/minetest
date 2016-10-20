@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 #import <SSZipArchive/SSZipArchive.h>
 #include "wrapper.h"
 
@@ -39,4 +40,17 @@ void wrapper_assets()
     NSLog(@"Assets found in %@", zippath);
     NSLog(@"Extracting to %@", destpath);
     [SSZipArchive unzipFileAtPath:zippath toDestination:destpath];
+}
+
+float wrapper_scale(void)
+{
+    return [[UIScreen mainScreen] scale];
+}
+
+void wrapper_size(unsigned int *dest)
+{
+    CGSize bounds = [[UIScreen mainScreen] bounds].size;
+    CGFloat scale = [[UIScreen mainScreen] scale];
+    dest[0] = bounds.width * scale;
+    dest[1] = bounds.height * scale;
 }

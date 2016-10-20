@@ -805,7 +805,7 @@ const char *getVideoDriverFriendlyName(irr::video::E_DRIVER_TYPE type)
 	return driver_names[type];
 }
 
-#	ifndef __ANDROID__
+#	if !defined(__ANDROID__) && !defined(__IOS__)
 #		ifdef XORG_USED
 
 static float calcDisplayDensity()
@@ -856,7 +856,7 @@ v2u32 getDisplaySize()
 
 	return deskres;
 }
-#	endif // __ANDROID__
+#	endif // __ANDROID__/__IOS__
 #endif // SERVER
 
 

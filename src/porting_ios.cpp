@@ -18,4 +18,24 @@ namespace porting {
     void copyAssets() {
         wrapper_assets();
     }
+
+    float getDisplayDensity() {
+        return 1.0;
+        //return wrapper_scale();
+    }
+
+    v2u32 getDisplaySize() {
+        static bool firstrun = true;
+        static v2u32 retval;
+
+        if(firstrun) {
+            unsigned int values[2];
+            wrapper_size(values);
+            retval.X = values[0];
+            retval.Y = values[1];
+            firstrun = false;
+        }
+
+        return retval;
+    }
 }
