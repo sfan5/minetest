@@ -384,10 +384,11 @@ void set_default_settings(Settings *settings)
 	}
 	settings->setDefault("curl_verify_cert","false");
 #elif defined(__IOS__)
-    settings->setDefault("screenW", "0");
-    settings->setDefault("screenH", "0");
-    settings->setDefault("fullscreen", "false");
-    settings->setDefault("video_driver", "ogles2");
+	settings->setDefault("screenW", "0");
+	settings->setDefault("screenH", "0");
+	settings->setDefault("fullscreen", "false");
+	settings->setDefault("video_driver", "ogles2");;
+	settings->setDefault("gui_scaling", "1.1");
 #else
 	settings->setDefault("screen_dpi", "72");
 #endif

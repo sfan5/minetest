@@ -800,6 +800,7 @@
 				C8A794206F0BE83133FEB9D0 /* Pods */,
 			);
 			sourceTree = "<group>";
+			usesTabs = 1;
 		};
 		F8AC6AD01DB8FBC6006796DB /* Products */ = {
 			isa = PBXGroup;

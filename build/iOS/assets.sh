@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-if [ ! -d Minetest.xcodeproject ]; then
+if [ ! -d Minetest/Minetest.xcodeproj ]; then
 	echo "Run this in build/iOS"
 	exit 1
 fi
