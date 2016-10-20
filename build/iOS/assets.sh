@@ -10,7 +10,8 @@ DEST=$(mktemp -d)
 for dir in builtin client fonts games textures; do
 	cp -r ../../$dir $DEST/$dir
 done
-cp -r deps/irrlicht/media $DEST/media
+mkdir -p $DEST/media
+cp -r deps/irrlicht/media/Shaders $DEST/media/Shaders
 
 find $DEST -type d -name '.git' -print0 | xargs -0 -- rm -r
 find $DEST -type f -name '.git*' -delete
