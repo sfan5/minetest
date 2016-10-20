@@ -22,6 +22,19 @@
 	#else
 		#define BUILD_TYPE "Debug"
 	#endif
+#elif defined (__IOS__)
+    #define PROJECT_NAME "minetest"
+    #define PROJECT_NAME_C "Minetest"
+    #define STATIC_SHAREDIR ""
+    #define VERSION_MAJOR 0
+    #define VERSION_MINOR 4
+    #define VERSION_PATCH 14
+    #define VERSION_STRING "0.4.14"
+    #ifdef NDEBUG
+        #define BUILD_TYPE "Release"
+    #else
+        #define BUILD_TYPE "Debug"
+    #endif
 #else
 	#ifdef NDEBUG
 		#define BUILD_TYPE "Release"

@@ -27,6 +27,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "exceptions.h"
 #include "util/numeric.h"
 #include "log.h"
+#ifdef __IOS__
+#include "wrapper.h"
+#endif
 
 #include <sstream>
 #include <iostream>
@@ -148,6 +151,29 @@ class AndroidSystemLogOutput : public ICombinedLogOutput {
 };
 
 AndroidSystemLogOutput g_android_log_output;
+
+#endif
+
+// iOS
+#ifdef __IOS__
+
+class IosSystemLogOutput : public ICombinedLogOutput {
+public:
+    IosSystemLogOutput()
+    {
+        g_logger.addOutput(this);
+    }
+    ~IosSystemLogOutput()
+    {
+        g_logger.removeOutput(this);
+    }
+    void logRaw(LogLevel lev, const std::string &line)
+    {
+        wrapper_NSLog(line.c_str());
+    }
+};
+
+IosSystemLogOutput g_ios_log_output;
 
 #endif
 

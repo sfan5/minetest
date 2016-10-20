@@ -57,10 +57,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #ifndef SERVER
 #include "client/clientlauncher.h"
 #endif
+#ifdef __IOS__
+#include "wrapper.h"
+#endif
 
 #ifdef HAVE_TOUCHSCREENGUI
 	#include "touchscreengui.h"
 #endif
+
 
 #if !defined(SERVER) && \
 	(IRRLICHT_VERSION_MAJOR == 1) && \
@@ -138,7 +142,11 @@ FileLogOutput file_log_output;
 
 static OptionList allowed_options;
 
+#ifdef __IOS__
+int real_main(int argc, char *argv[])
+#else
 int main(int argc, char *argv[])
+#endif
 {
 	int retval;
 
@@ -248,6 +256,16 @@ int main(int argc, char *argv[])
 	return retval;
 }
 
+#ifdef __IOS__
+void irrlicht_main() {
+    static const char *args[] = {
+        PROJECT_NAME,
+        "--verbose",
+    };
+    wrapper_NSLog("irrlicht_main()");
+    real_main(2, (char**) args);
+}
+#endif
 
 /*****************************************************************************
  * Startup / Init

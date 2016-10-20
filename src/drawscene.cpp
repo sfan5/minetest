@@ -383,6 +383,7 @@ void draw_pageflip_3d_mode(Camera& camera, bool show_hud,
 		bool draw_wield_tool, Client& client, gui::IGUIEnvironment* guienv,
 		video::SColor skycolor)
 {
+#if 0
 	/* preserve old setup*/
 	irr::core::vector3df oldPosition = camera.getCameraNode()->getPosition();
 	irr::core::vector3df oldTarget   = camera.getCameraNode()->getTarget();
@@ -451,6 +452,7 @@ void draw_pageflip_3d_mode(Camera& camera, bool show_hud,
 
 	camera.getCameraNode()->setPosition(oldPosition);
 	camera.getCameraNode()->setTarget(oldTarget);
+#endif
 }
 
 void draw_plain(Camera &camera, bool show_hud, Hud &hud,

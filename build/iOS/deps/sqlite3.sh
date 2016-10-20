@@ -12,9 +12,10 @@ if [ ! -d sqlite3-src ]; then
 fi
 
 cd sqlite3-src
+rm -f libsqlite3.a
 
 $IOS_CC $IOS_FLAGS sqlite3.c -O3 -c -o sqlite3.o
-ar rc libsqlite3.a sqlite3.o
+ar rcs libsqlite3.a sqlite3.o
 
 mkdir -p ../sqlite3/include
 cp libsqlite3.a ../sqlite3/

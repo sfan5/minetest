@@ -90,7 +90,8 @@ build/android/.gradle
 timestamp
 
 ## iOS build files
-build/iOS/Minetest.xcodeproj/xcuserdata
+build/iOS/Minetest/Minetest.xcodeproj/xcuserdata
+build/iOS/Minetest/Minetest.xcodeproj/project.xcworkspace
 build/iOS/deps/*
 !build/iOS/deps/*.sh
 build/iOS/assets.zip

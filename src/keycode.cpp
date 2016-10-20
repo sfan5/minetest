@@ -355,6 +355,11 @@ const char *KeyPress::name() const
 	return ret ? ret : "<Unnamed key>";
 }
 
+irr::EKEY_CODE keyname_to_keycode(const char *keyname)
+{
+    return lookup_keyname(keyname).Key;
+}
+
 const KeyPress EscapeKey("KEY_ESCAPE");
 const KeyPress CancelKey("KEY_CANCEL");
 const KeyPress NumberKey[] = {
