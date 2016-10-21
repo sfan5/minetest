@@ -529,8 +529,10 @@ private:
 
 	std::wstring getLabelByID(s32 id);
 	std::string getNameByID(s32 id);
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(__IOS__)
 	v2s32 m_down_pos;
+#endif
+#ifdef __ANDROID__
 	std::string m_JavaDialogFieldName;
 #endif
 

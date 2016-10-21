@@ -1,0 +1,52 @@
+--- include/IEventReceiver.h.orig	2016-10-21 00:07:27.000000000 +0200
++++ include/IEventReceiver.h	2016-10-21 00:08:40.000000000 +0200
+@@ -417,6 +417,9 @@
+         // Y position of simple touch.
+ 		s32 Y;
+ 
++        // Number of current touches
++        s32 touchedCount;
++
+ 		//! Type of touch event.
+ 		ETOUCH_INPUT_EVENT Event;
+ 	};
+--- source/Irrlicht/CIrrDeviceiOS.mm.orig	2016-10-21 00:07:45.000000000 +0200
++++ source/Irrlicht/CIrrDeviceiOS.mm	2016-10-21 00:10:07.000000000 +0200
+@@ -202,6 +202,7 @@
+ 	irr::SEvent ev;
+ 	ev.EventType = irr::EET_TOUCH_INPUT_EVENT;
+ 	ev.TouchInput.Event = irr::ETIE_PRESSED_DOWN;
++    ev.TouchInput.touchedCount = [touches count];
+     
+ 	for (UITouch* touch in touches)
+ 	{
+@@ -220,7 +221,8 @@
+ {
+ 	irr::SEvent ev;
+ 	ev.EventType = irr::EET_TOUCH_INPUT_EVENT;
+-	ev.TouchInput.Event = irr::ETIE_MOVED;
++    ev.TouchInput.Event = irr::ETIE_MOVED;
++    ev.TouchInput.touchedCount = [touches count];
+     
+ 	for (UITouch* touch in touches)
+ 	{
+@@ -239,7 +241,8 @@
+ {
+ 	irr::SEvent ev;
+ 	ev.EventType = irr::EET_TOUCH_INPUT_EVENT;
+-	ev.TouchInput.Event = irr::ETIE_LEFT_UP;
++    ev.TouchInput.Event = irr::ETIE_LEFT_UP;
++    ev.TouchInput.touchedCount = [touches count];
+     
+ 	for (UITouch* touch in touches)
+ 	{
+@@ -258,7 +261,8 @@
+ {
+ 	irr::SEvent ev;
+ 	ev.EventType = irr::EET_TOUCH_INPUT_EVENT;
+-	ev.TouchInput.Event = irr::ETIE_LEFT_UP;
++    ev.TouchInput.Event = irr::ETIE_LEFT_UP;
++    ev.TouchInput.touchedCount = [touches count];
+     
+ 	for (UITouch* touch in touches)
+ 	{

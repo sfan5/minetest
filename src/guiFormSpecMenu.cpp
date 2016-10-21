@@ -2997,7 +2997,9 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			return retval;
 		}
 	}
+	#endif
 
+	#if defined(__ANDROID__) || defined(__IOS__)
 	if (event.EventType == EET_TOUCH_INPUT_EVENT)
 	{
 		SEvent translated;

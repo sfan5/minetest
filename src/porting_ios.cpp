@@ -15,7 +15,7 @@ namespace porting {
         path_cache = std::string(buf);
     }
 
-    void copyAssets() {
+    void copyAssets() {
         wrapper_assets();
     }
 
