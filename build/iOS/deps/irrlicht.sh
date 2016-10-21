@@ -8,7 +8,9 @@
 cd irrlicht-src/
 
 if [ ! -f .patched ]; then
-	patch -p0 <../../patches/irrlicht-touchcount.patch
+	for p in touchcount unscaled; do
+		patch -p0 <../../patches/irrlicht-$p.patch
+	done
 	touch .patched
 fi
 

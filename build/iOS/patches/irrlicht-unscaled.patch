@@ -1,0 +1,11 @@
+--- source/Irrlicht/CIrrDeviceiOS.mm.orig	2016-10-21 13:27:51.000000000 +0200
++++ source/Irrlicht/CIrrDeviceiOS.mm	2016-10-21 13:28:14.000000000 +0200
+@@ -186,7 +186,7 @@
+     if (self)
+     {
+         Device = device;
+-        Scale = ([self respondsToSelector:@selector(setContentScaleFactor:)]) ? [[UIScreen mainScreen] scale] : 1.f;
++        Scale = 1.f;
+     }
+     
+     return self;
