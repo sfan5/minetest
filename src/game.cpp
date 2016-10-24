@@ -3221,7 +3221,7 @@ void Game::updateCameraDirection(CameraOrientation *cam,
 {
 	if ((device->isWindowActive() && noMenuActive()) || random_input) {
 
-#ifndef __ANDROID__
+#if !defined(__ANDROID__) && !defined(__IOS__)
 		if (!random_input) {
 			// Mac OSX gets upset if this is set every frame
 			if (device->getCursorControl()->isVisible())
@@ -3238,7 +3238,7 @@ void Game::updateCameraDirection(CameraOrientation *cam,
 				(driver->getScreenSize().Height / 2));
 	} else {
 
-#ifndef ANDROID
+#if !defined(__ANDROID__) && !defined(__IOS__)
 		// Mac OSX gets upset if this is set every frame
 		if (device->getCursorControl()->isVisible() == false)
 			device->getCursorControl()->setVisible(true);

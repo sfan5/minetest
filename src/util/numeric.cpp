@@ -157,7 +157,14 @@ u64 murmur_hash_64_ua(const void *key, int len, unsigned int seed)
 
 	while (data != end) {
 		u64 k;
+#if !defined(__IOS__)
 		memcpy(&k, data, sizeof(u64));
+#else
+		// iOS needs this weird workaround for some reason
+		k = 0;
+		for(u8 i = 0; i < sizeof(u64); i++)
+			((char*) &k)[i] = data[i];
+#endif
 		data++;
 
 		k *= m;
