@@ -387,8 +387,33 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("screenW", "0");
 	settings->setDefault("screenH", "0");
 	settings->setDefault("fullscreen", "false");
-	settings->setDefault("video_driver", "ogles2");;
+	settings->setDefault("video_driver", "ogles2");
+
+	settings->setDefault("touchtarget", "true");
+	settings->setDefault("touchscreen_threshold", "20");
 	settings->setDefault("gui_scaling", "1.1");
+	settings->setDefault("inventory_image_hack", "false");
+	settings->setDefault("hud_scaling", "0.7"); // different from android
+
+	settings->setDefault("smooth_lighting", "false");
+	settings->setDefault("enable_shaders", "false");
+	settings->setDefault("enable_3d_clouds", "false");
+	settings->setDefault("fps_max", "30");
+	settings->setDefault("pause_fps_max", "10");
+
+	settings->setDefault("chunksize", "3");
+	settings->setDefault("emergequeue_limit_diskonly", "8");
+	settings->setDefault("emergequeue_limit_generate", "8");
+	settings->setDefault("max_block_generate_distance", "4"); // different from android
+	settings->setDefault("max_objects_per_block", "20");
+
+	settings->setDefault("max_simultaneous_block_sends_per_client", "3");
+	settings->setDefault("client_mapblock_limit", "500");
+	settings->setDefault("viewing_range", "40"); // different from android
+
+	settings->setDefault("server_map_save_interval", "15");
+	settings->setDefault("sqlite_synchronous", "1");
+	settings->setDefault("active_block_range", "2"); // different from android
 #else
 	settings->setDefault("screen_dpi", "72");
 #endif
