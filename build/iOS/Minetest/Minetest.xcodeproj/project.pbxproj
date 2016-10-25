@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		DD5F67A813AC32DF95004458 /* libPods-Minetest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 08B591FAB04236D8C52ACCCB /* libPods-Minetest.a */; };
+		F825B3621DBF8BFC00A2DFC9 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F825B3611DBF8BFC00A2DFC9 /* libsqlite3.tbd */; };
 		F855158A1DB968A7009D963C /* libiconv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F85515891DB968A7009D963C /* libiconv.tbd */; };
 		F8AC6ADD1DB8FBC6006796DB /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F8AC6ADB1DB8FBC6006796DB /* Main.storyboard */; };
 		F8AC6ADF1DB8FBC6006796DB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F8AC6ADE1DB8FBC6006796DB /* Assets.xcassets */; };
@@ -249,7 +250,6 @@
 		F8AC6DF61DB900E3006796DB /* clientlauncher.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F8AC6DED1DB900E3006796DB /* clientlauncher.cpp */; };
 		F8AC6DF81DB900E3006796DB /* joystick_controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F8AC6DF11DB900E3006796DB /* joystick_controller.cpp */; };
 		F8AC6DF91DB900E3006796DB /* tile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F8AC6DF41DB900E3006796DB /* tile.cpp */; };
-		F8AC6E081DB9060C006796DB /* libsqlite3.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F8AC6E071DB9060C006796DB /* libsqlite3.a */; settings = {ATTRIBUTES = (Required, ); }; };
 		F8AC6E091DB9131E006796DB /* libIrrlicht.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F8AC6E051DB90600006796DB /* libIrrlicht.a */; settings = {ATTRIBUTES = (Required, ); }; };
 		F8AC6E0B1DB91457006796DB /* CoreMotion.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8AC6E0A1DB91457006796DB /* CoreMotion.framework */; };
 		F8AC6E0F1DB91469006796DB /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8AC6E0E1DB91469006796DB /* Foundation.framework */; };
@@ -263,6 +263,7 @@
 		08B591FAB04236D8C52ACCCB /* libPods-Minetest.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Minetest.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C06C0683810A2A1E1CC17F5B /* Pods-Minetest.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Minetest.release.xcconfig"; path = "../Pods/Target Support Files/Pods-Minetest/Pods-Minetest.release.xcconfig"; sourceTree = "<group>"; };
 		E5154443363AD41FB5F0DB52 /* Pods-Minetest.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Minetest.debug.xcconfig"; path = "../Pods/Target Support Files/Pods-Minetest/Pods-Minetest.debug.xcconfig"; sourceTree = "<group>"; };
+		F825B3611DBF8BFC00A2DFC9 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		F85515891DB968A7009D963C /* libiconv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.tbd; path = usr/lib/libiconv.tbd; sourceTree = SDKROOT; };
 		F8AC6ACF1DB8FBC6006796DB /* Minetest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Minetest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8AC6ADC1DB8FBC6006796DB /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -773,7 +774,7 @@
 				F8AC6E0F1DB91469006796DB /* Foundation.framework in Frameworks */,
 				F8AC6E0B1DB91457006796DB /* CoreMotion.framework in Frameworks */,
 				F855158A1DB968A7009D963C /* libiconv.tbd in Frameworks */,
-				F8AC6E081DB9060C006796DB /* libsqlite3.a in Frameworks */,
+				F825B3621DBF8BFC00A2DFC9 /* libsqlite3.tbd in Frameworks */,
 				F8AC6E091DB9131E006796DB /* libIrrlicht.a in Frameworks */,
 				DD5F67A813AC32DF95004458 /* libPods-Minetest.a in Frameworks */,
 			);
@@ -1427,6 +1428,7 @@
 		F8AC6E041DB90600006796DB /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F825B3611DBF8BFC00A2DFC9 /* libsqlite3.tbd */,
 				F85515891DB968A7009D963C /* libiconv.tbd */,
 				F8AC6E141DB9147C006796DB /* QuartzCore.framework */,
 				F8AC6E121DB91477006796DB /* UIKit.framework */,
@@ -1949,7 +1951,6 @@
 					"${SRCROOT}/../../../src/jsoncpp",
 					"${SRCROOT}/../../../src/script",
 					"${SRCROOT}/../deps/irrlicht/include",
-					"${SRCROOT}/../deps/sqlite3/include",
 				);
 				INFOPLIST_FILE = Minetest/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
@@ -1996,7 +1997,6 @@
 					"${SRCROOT}/../../../src/jsoncpp",
 					"${SRCROOT}/../../../src/script",
 					"${SRCROOT}/../deps/irrlicht/include",
-					"${SRCROOT}/../deps/sqlite3/include",
 				);
 				INFOPLIST_FILE = Minetest/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;

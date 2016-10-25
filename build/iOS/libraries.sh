@@ -2,7 +2,6 @@
 
 cd deps
 
-./sqlite3.sh
 ./irrlicht.sh
 
 echo
