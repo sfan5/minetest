@@ -1134,7 +1134,7 @@ static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
 	}
 }
 
-#ifdef __ANDROID__
+#ifdef HAVE_TOUCHSCREENGUI
 #define SIZE_TAG "size[11,5.5]"
 #else
 #define SIZE_TAG "size[11,5.5,true]" // Fixed size on desktop
@@ -1169,7 +1169,7 @@ static void show_pause_menu(GUIFormSpecMenu **cur_formspec,
 		IWritableTextureSource *tsrc, IrrlichtDevice *device,
 		JoystickController *joystick, bool singleplayermode)
 {
-#ifdef __ANDROID__
+#ifdef HAVE_TOUCHSCREENGUI
 	std::string control_text = strgettext("Default Controls:\n"
 		"No menu visible:\n"
 		"- single tap: button activate\n"
@@ -1210,7 +1210,7 @@ static void show_pause_menu(GUIFormSpecMenu **cur_formspec,
 		   << strgettext("Change Password") << "]";
 	}
 
-#ifndef __ANDROID__
+#if !defined(__ANDROID__) && !defined(__IOS__)
 	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_sound;"
 			<< strgettext("Sound Volume") << "]";
 	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_key_config;"

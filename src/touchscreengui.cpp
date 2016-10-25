@@ -91,6 +91,8 @@ static irr::EKEY_CODE id2keycode(touch_gui_button_id id)
 		case chat_id:
 			key = "chat";
 			break;
+		case escape_id:
+			return irr::KEY_ESCAPE;
 		case camera_id:
 			key = "camera_mode";
 			break;
@@ -555,7 +557,11 @@ void TouchScreenGUI::init(ISimpleTextureSource* tsrc)
 							+ (button_size * 0.5)), AHBB_Dir_Left_Right,
 			2);
 
+#ifdef __IOS__
+	m_rarecontrolsbar.addButton(escape_id,    L"Esc",  "escape_btn.png");
+#else
 	m_rarecontrolsbar.addButton(chat_id,      L"Chat", "chat_btn.png");
+#endif
 	m_rarecontrolsbar.addButton(inventory_id, L"inv",  "inventory_btn.png");
 	m_rarecontrolsbar.addButton(drop_id,      L"drop", "drop_btn.png");
 
