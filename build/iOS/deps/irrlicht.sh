@@ -8,7 +8,7 @@
 cd irrlicht-src/
 
 if [ ! -f .patched ]; then
-	for p in touchcount unscaled; do
+	for p in touchcount unscaled dblfreefix; do
 		patch -p0 <../../patches/irrlicht-$p.patch
 	done
 	touch .patched

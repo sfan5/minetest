@@ -1,0 +1,12 @@
+--- source/Irrlicht/COpenGLCoreCacheHandler.h.orig	2016-10-25 15:42:40.000000000 +0200
++++ source/Irrlicht/COpenGLCoreCacheHandler.h	2016-10-25 15:52:13.000000000 +0200
+@@ -115,9 +115,6 @@
+ 					}
+ 
+ 					Texture[index] = static_cast<const TOpenGLTexture*>(texture);
+-
+-					if (prevTexture)
+-						prevTexture->drop();
+ 				}
+ 
+ 				status = true;

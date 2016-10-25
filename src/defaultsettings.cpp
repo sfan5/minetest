@@ -387,12 +387,11 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("screenW", "0");
 	settings->setDefault("screenH", "0");
 	settings->setDefault("fullscreen", "false");
-	settings->setDefault("video_driver", "ogles2");
+	settings->setDefault("video_driver", "ogles1");
 
 	settings->setDefault("touchtarget", "true");
 	settings->setDefault("touchscreen_threshold", "20");
 	settings->setDefault("gui_scaling", "1.1");
-	settings->setDefault("inventory_image_hack", "false");
 	settings->setDefault("hud_scaling", "0.7"); // different from android
 
 	settings->setDefault("smooth_lighting", "false");

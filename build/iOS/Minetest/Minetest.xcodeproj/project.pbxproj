@@ -1957,7 +1957,6 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				OTHER_LDFLAGS = (
 					"$(inherited)",
-					"-L${SRCROOT}/../deps/sqlite3",
 					"-L${SRCROOT}/../deps/irrlicht",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = net.minetest.Minetest;
@@ -2003,7 +2002,6 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				OTHER_LDFLAGS = (
 					"$(inherited)",
-					"-L${SRCROOT}/../deps/sqlite3",
 					"-L${SRCROOT}/../deps/irrlicht",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = net.minetest.Minetest;
