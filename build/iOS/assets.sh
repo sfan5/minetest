@@ -19,6 +19,7 @@ find $DEST -type f -name '.DS_Store' -delete
 
 echo "Creating assets.zip"
 ZIPDEST=$(pwd)/assets.zip
-cd $DEST; zip -9r $ZIPDEST -- *
+rm -f $ZIPDEST
 
+cd $DEST; zip -9r $ZIPDEST -- *
 cd /; rm -rf $DEST
