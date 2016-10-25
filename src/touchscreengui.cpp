@@ -798,7 +798,7 @@ void TouchScreenGUI::translateEvent(const SEvent &event)
 			}
 		}
 
-		m_pointerpos[event.TouchInput.ID] = v2s32(event.TouchInput.X, event.TouchInput.Y);
+		storePointerPos(event.TouchInput.ID, v2s32(event.TouchInput.X, event.TouchInput.Y));
 	}
 	else if (event.TouchInput.Event == ETIE_LEFT_UP) {
 		verbosestream << "Up event for pointerid: " << event.TouchInput.ID << std::endl;
@@ -808,7 +808,7 @@ void TouchScreenGUI::translateEvent(const SEvent &event)
 		assert(event.TouchInput.Event == ETIE_MOVED);
 		int move_idx = event.TouchInput.ID;
 
-		if (m_pointerpos[event.TouchInput.ID] ==
+		if (getPointerPos(event.TouchInput.ID) ==
 				v2s32(event.TouchInput.X, event.TouchInput.Y)) {
 			return;
 		}
@@ -817,11 +817,12 @@ void TouchScreenGUI::translateEvent(const SEvent &event)
 			if ((event.TouchInput.ID == m_move_id) &&
 				(!m_move_sent_as_mouse_event)) {
 
+				v2s32 old_pos = getPointerPos(event.TouchInput.ID);
 				double distance = sqrt(
-						(m_pointerpos[event.TouchInput.ID].X - event.TouchInput.X) *
-						(m_pointerpos[event.TouchInput.ID].X - event.TouchInput.X) +
-						(m_pointerpos[event.TouchInput.ID].Y - event.TouchInput.Y) *
-						(m_pointerpos[event.TouchInput.ID].Y - event.TouchInput.Y));
+						(old_pos.X - event.TouchInput.X) *
+						(old_pos.X - event.TouchInput.X) +
+						(old_pos.Y - event.TouchInput.Y) *
+						(old_pos.Y - event.TouchInput.Y));
 
 				if ((distance > g_settings->getU16("touchscreen_threshold")) ||
 						(m_move_has_really_moved)) {
@@ -830,8 +831,8 @@ void TouchScreenGUI::translateEvent(const SEvent &event)
 					s32 Y = event.TouchInput.Y;
 
 					// update camera_yaw and camera_pitch
-					s32 dx = X - m_pointerpos[event.TouchInput.ID].X;
-					s32 dy = Y - m_pointerpos[event.TouchInput.ID].Y;
+					s32 dx = X - getPointerPos(event.TouchInput.ID).X;
+					s32 dy = Y - getPointerPos(event.TouchInput.ID).Y;
 
 					/* adapt to similar behaviour as pc screen */
 					double d         = g_settings->getFloat("mouse_sensitivity") *4;
@@ -852,7 +853,7 @@ void TouchScreenGUI::translateEvent(const SEvent &event)
 							->getSceneManager()
 							->getSceneCollisionManager()
 							->getRayFromScreenCoordinates(v2s32(X, Y));
-					m_pointerpos[event.TouchInput.ID] = v2s32(X, Y);
+					storePointerPos(event.TouchInput.ID, v2s32(X, Y));
 				}
 			}
 			else if ((event.TouchInput.ID == m_move_id) &&
@@ -1086,4 +1087,17 @@ void TouchScreenGUI::show()
 		return;
 
 	Toggle(true);
+}
+
+inline void TouchScreenGUI::storePointerPos(size_t ID, v2s32 pos)
+{
+	m_pointerpos[ID] = pos;
+}
+
+inline v2s32 TouchScreenGUI::getPointerPos(size_t ID)
+{
+	std::map<size_t, v2s32>::const_iterator it = m_pointerpos.find(ID);
+	if(it == m_pointerpos.cend())
+		return v2s32(0, 0);
+	return it->second;
 }

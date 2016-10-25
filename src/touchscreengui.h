@@ -62,7 +62,6 @@ typedef enum {
 } autohide_button_bar_dir;
 
 #define MIN_DIG_TIME_MS 500
-#define MAX_TOUCH_COUNT 64
 #define BUTTON_REPEAT_DELAY 0.2f
 
 #define SETTINGS_BAR_Y_OFFSET 6.5
@@ -229,6 +228,9 @@ private:
 	/* get size of regular gui control button */
 	int getGuiButtonSize();
 
+	void storePointerPos(size_t ID, v2s32 pos);
+	v2s32 getPointerPos(size_t ID);
+
 	/* doubleclick detection variables */
 	struct key_event {
 		unsigned int down_time;
@@ -237,7 +239,7 @@ private:
 	};
 
 	/* array for saving last known position of a pointer */
-	v2s32 m_pointerpos[MAX_TOUCH_COUNT];
+	std::map<size_t, v2s32> m_pointerpos;
 
 	/* array for doubletap detection */
 	key_event m_key_events[2];
