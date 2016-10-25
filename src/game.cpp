@@ -1747,8 +1747,10 @@ private:
 	f32  m_cache_joystick_frustum_sensitivity;
 	f32  m_repeat_right_click_time;
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(__IOS__)
 	bool m_cache_hold_aux1;
+#endif
+#ifdef __ANDROID__
 	bool m_android_chat_open;
 #endif
 };
@@ -1799,7 +1801,7 @@ Game::Game() :
 
 	readSettings();
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(__IOS__)
 	m_cache_hold_aux1 = false;	// This is initialised properly later
 #endif
 
@@ -1930,7 +1932,7 @@ void Game::run()
 
 	set_light_table(g_settings->getFloat("display_gamma"));
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(__IOS__)
 	m_cache_hold_aux1 = g_settings->getBool("fast_move")
 			&& client->checkPrivilege("fast");
 #endif
@@ -3001,7 +3003,7 @@ void Game::toggleFast(float *statustext_time)
 	if (fast_move && !has_fast_privs)
 		statustext += L" (note: no 'fast' privilege)";
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(__IOS__)
 	m_cache_hold_aux1 = fast_move && has_fast_privs;
 #endif
 }
@@ -3324,7 +3326,7 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 			( (u32)(isRightPressed()                                  & 0x1) << 8
 		);
 
-#ifdef ANDROID
+#if defined(__ANDROID__) || defined(__IOS__)
 	/* For Android, simulate holding down AUX1 (fast move) if the user has
 	 * the fast_move setting toggled on. If there is an aux1 key defined for
 	 * Android then its meaning is inverted (i.e. holding aux1 means walk and
