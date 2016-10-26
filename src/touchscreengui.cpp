@@ -327,7 +327,7 @@ bool AutoHideButtonBar::isButton(const SEvent &event)
 
 bool AutoHideButtonBar::isReleaseButton(int eventID)
 {
-	std::vector<int>::iterator id = std::find(m_starter.ids.begin(),
+	std::vector<size_t>::iterator id = std::find(m_starter.ids.begin(),
 			m_starter.ids.end(), eventID);
 
 	if (id != m_starter.ids.end()) {
@@ -338,7 +338,7 @@ bool AutoHideButtonBar::isReleaseButton(int eventID)
 	std::vector<button_info*>::iterator iter = m_buttons.begin();
 
 	while (iter != m_buttons.end()) {
-		std::vector<int>::iterator id = std::find((*iter)->ids.begin(),
+		std::vector<size_t>::iterator id = std::find((*iter)->ids.begin(),
 				(*iter)->ids.end(), eventID);
 
 		if (id != (*iter)->ids.end()) {
@@ -591,7 +591,7 @@ touch_gui_button_id TouchScreenGUI::getButtonID(int eventID)
 	for (unsigned int i=0; i < after_last_element_id; i++) {
 		button_info* btn = &m_buttons[i];
 
-		std::vector<int>::iterator id =
+		std::vector<size_t>::iterator id =
 				std::find(btn->ids.begin(),btn->ids.end(), eventID);
 
 		if (id != btn->ids.end())
@@ -649,7 +649,7 @@ bool TouchScreenGUI::isReleaseHUDButton(int eventID)
 }
 
 void TouchScreenGUI::handleButtonEvent(touch_gui_button_id button,
-		int eventID, bool action)
+		size_t eventID, bool action)
 {
 	button_info* btn = &m_buttons[button];
 	SEvent* translated = new SEvent();
@@ -676,7 +676,7 @@ void TouchScreenGUI::handleButtonEvent(touch_gui_button_id button,
 	/* remove event */
 	if ((!action) || (btn->immediate_release)) {
 
-		std::vector<int>::iterator pos =
+		std::vector<size_t>::iterator pos =
 				std::find(btn->ids.begin(),btn->ids.end(), eventID);
 		/* has to be in touch list */
 		assert(pos != btn->ids.end());
@@ -883,7 +883,7 @@ void TouchScreenGUI::handleChangedButton(const SEvent &event)
 		if (m_buttons[i].ids.empty()) {
 			continue;
 		}
-		for (std::vector<int>::iterator iter = m_buttons[i].ids.begin();
+		for (std::vector<size_t>::iterator iter = m_buttons[i].ids.begin();
 				iter != m_buttons[i].ids.end(); ++iter) {
 
 			if (event.TouchInput.ID == *iter) {

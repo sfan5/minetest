@@ -74,7 +74,7 @@ struct button_info {
 	float            repeatcounter;
 	float            repeatdelay;
 	irr::EKEY_CODE   keycode;
-	std::vector<int> ids;
+	std::vector<size_t> ids;
 	IGUIButton*      guibutton;
 	bool             immediate_release;
 };
@@ -212,7 +212,7 @@ private:
 	std::vector<id_status> m_known_ids;
 
 	/* handle a button event */
-	void handleButtonEvent(touch_gui_button_id bID, int eventID, bool action);
+	void handleButtonEvent(touch_gui_button_id bID, size_t eventID, bool action);
 
 	/* handle pressed hud buttons */
 	bool isHUDButton(const SEvent &event);
