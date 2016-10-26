@@ -255,16 +255,6 @@ int main(int argc, char *argv[])
 	return retval;
 }
 
-#ifdef __IOS__
-void irrlicht_main() {
-    static const char *args[] = {
-        PROJECT_NAME,
-        "--verbose",
-    };
-    real_main(2, (char**) args);
-}
-#endif
-
 /*****************************************************************************
  * Startup / Init
  *****************************************************************************/

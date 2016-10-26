@@ -1,6 +1,7 @@
 #include <string>
 
 #include "porting.h"
+#include "config.h"
 #include "wrapper.h"
 
 
@@ -39,4 +40,19 @@ namespace porting {
 
         return retval;
     }
+}
+
+
+extern int real_main(int argc, char *argv[]);
+
+void irrlicht_main() {
+	static const char *args[] = {
+		PROJECT_NAME,
+#ifdef DEBUG
+		"--verbose",
+#else
+		"",
+#endif
+	};
+	real_main(2, (char**) args);
 }
