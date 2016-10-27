@@ -177,7 +177,7 @@ private:
 
 	rect<s32>               m_control_pad_rect;
 
-	int                     m_move_id;
+	size_t                  m_move_id;
 	bool                    m_move_has_really_moved;
 	s32                     m_move_downtime;
 	bool                    m_move_sent_as_mouse_event;
