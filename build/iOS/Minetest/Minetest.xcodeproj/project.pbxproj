@@ -263,6 +263,8 @@
 		F8AC6E131DB91477006796DB /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8AC6E121DB91477006796DB /* UIKit.framework */; };
 		F8AC6E151DB9147C006796DB /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8AC6E141DB9147C006796DB /* QuartzCore.framework */; };
 		F8AC6E181DB94150006796DB /* porting_ios.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F8AC6E171DB94150006796DB /* porting_ios.cpp */; };
+		F8DBE3341DC6335F0064DA12 /* libfreetype.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F8DBE3331DC6335F0064DA12 /* libfreetype.a */; };
+		F8DBE33E1DC6340F0064DA12 /* xCGUITTFont.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F8DBE33A1DC6340F0064DA12 /* xCGUITTFont.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -774,6 +776,10 @@
 		F8AC6E141DB9147C006796DB /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		F8AC6E161DB940DD006796DB /* porting_ios.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = porting_ios.h; path = ../../../../src/porting_ios.h; sourceTree = "<group>"; };
 		F8AC6E171DB94150006796DB /* porting_ios.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = porting_ios.cpp; path = ../../../../src/porting_ios.cpp; sourceTree = "<group>"; };
+		F8DBE3331DC6335F0064DA12 /* libfreetype.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libfreetype.a; path = ../deps/freetype/lib/libfreetype.a; sourceTree = "<group>"; };
+		F8DBE3391DC6340F0064DA12 /* irrUString.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = irrUString.h; path = ../../../../src/cguittfont/irrUString.h; sourceTree = "<group>"; };
+		F8DBE33A1DC6340F0064DA12 /* xCGUITTFont.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = xCGUITTFont.cpp; path = ../../../../src/cguittfont/xCGUITTFont.cpp; sourceTree = "<group>"; };
+		F8DBE33B1DC6340F0064DA12 /* xCGUITTFont.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = xCGUITTFont.h; path = ../../../../src/cguittfont/xCGUITTFont.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -790,6 +796,7 @@
 				F855158A1DB968A7009D963C /* libiconv.tbd in Frameworks */,
 				F825B3621DBF8BFC00A2DFC9 /* libsqlite3.tbd in Frameworks */,
 				F8AC6E091DB9131E006796DB /* libIrrlicht.a in Frameworks */,
+				F8DBE3341DC6335F0064DA12 /* libfreetype.a in Frameworks */,
 				F8935AB91DC0DC9F00A8A6DA /* libleveldb.a in Frameworks */,
 				F88202441DBFF03F00F85A2D /* libogg.a in Frameworks */,
 				F88202461DBFF07400F85A2D /* libvorbis.a in Frameworks */,
@@ -862,6 +869,7 @@
 				F8AC6AF61DB8FD63006796DB /* camera.h */,
 				F8AC6AF71DB8FD63006796DB /* cavegen.cpp */,
 				F8AC6AF81DB8FD63006796DB /* cavegen.h */,
+				F8DBE3351DC633FD0064DA12 /* cguittfont */,
 				F8AC6AFA1DB8FD63006796DB /* chat_interface.h */,
 				F8AC6AFB1DB8FD63006796DB /* chat.cpp */,
 				F8AC6AFC1DB8FD63006796DB /* chat.h */,
@@ -1448,6 +1456,7 @@
 		F8AC6E041DB90600006796DB /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F8DBE3331DC6335F0064DA12 /* libfreetype.a */,
 				F8935AB81DC0DC9F00A8A6DA /* libleveldb.a */,
 				F88202471DBFF08000F85A2D /* libvorbisfile.a */,
 				F88202451DBFF07400F85A2D /* libvorbis.a */,
@@ -1466,6 +1475,16 @@
 				08B591FAB04236D8C52ACCCB /* libPods-Minetest.a */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		F8DBE3351DC633FD0064DA12 /* cguittfont */ = {
+			isa = PBXGroup;
+			children = (
+				F8DBE3391DC6340F0064DA12 /* irrUString.h */,
+				F8DBE33A1DC6340F0064DA12 /* xCGUITTFont.cpp */,
+				F8DBE33B1DC6340F0064DA12 /* xCGUITTFont.h */,
+			);
+			name = cguittfont;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1703,6 +1722,7 @@
 				F8AC6C581DB8FD64006796DB /* mg_ore.cpp in Sources */,
 				F8AC6D7D1DB8FFE7006796DB /* connection.cpp in Sources */,
 				F8AC6C361DB8FD64006796DB /* guiTable.cpp in Sources */,
+				F8DBE33E1DC6340F0064DA12 /* xCGUITTFont.cpp in Sources */,
 				F8AC6D3A1DB8FF82006796DB /* s_server.cpp in Sources */,
 				F8AC6C301DB8FD64006796DB /* guiEngine.cpp in Sources */,
 				F8AC6CFB1DB8FEE0006796DB /* mutex.cpp in Sources */,
@@ -1962,7 +1982,7 @@
 					"USE_GETTEXT=0",
 					"USE_CURL=0",
 					"USE_SOUND=1",
-					"USE_FREETYPE=0",
+					"USE_FREETYPE=1",
 					"USE_CURSES=0",
 					"USE_LEVELDB=1",
 					"USE_LUAJIT=0",
@@ -1982,6 +2002,7 @@
 					"$(SRCROOT)/../deps/libogg/include",
 					"$(SRCROOT)/../deps/libvorbis/include",
 					"${SRCROOT}/../deps/leveldb/include",
+					"${SRCROOT}/../deps/freetype/include/freetype2",
 				);
 				INFOPLIST_FILE = Minetest/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
@@ -1992,6 +2013,7 @@
 					"-L$(SRCROOT)/../deps/libogg/lib",
 					"-L$(SRCROOT)/../deps/libvorbis/lib",
 					"-L${SRCROOT}/../deps/leveldb/lib",
+					"-L${SRCROOT}/../deps/freetype/lib",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = net.minetest.Minetest;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2013,7 +2035,7 @@
 					"USE_GETTEXT=0",
 					"USE_CURL=0",
 					"USE_SOUND=1",
-					"USE_FREETYPE=0",
+					"USE_FREETYPE=1",
 					"USE_CURSES=0",
 					"USE_LEVELDB=0",
 					"USE_LUAJIT=0",
@@ -2033,6 +2055,7 @@
 					"$(SRCROOT)/../deps/libogg/include",
 					"$(SRCROOT)/../deps/libvorbis/include",
 					"${SRCROOT}/../deps/leveldb/include",
+					"${SRCROOT}/../deps/freetype/include/freetype2",
 				);
 				INFOPLIST_FILE = Minetest/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
@@ -2043,6 +2066,7 @@
 					"-L$(SRCROOT)/../deps/libogg/lib",
 					"-L$(SRCROOT)/../deps/libvorbis/lib",
 					"-L${SRCROOT}/../deps/leveldb/lib",
+					"-L${SRCROOT}/../deps/freetype/lib",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = net.minetest.Minetest;
 				PRODUCT_NAME = "$(TARGET_NAME)";
