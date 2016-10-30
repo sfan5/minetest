@@ -325,7 +325,7 @@ bool AutoHideButtonBar::isButton(const SEvent &event)
 	return false;
 }
 
-bool AutoHideButtonBar::isReleaseButton(int eventID)
+bool AutoHideButtonBar::isReleaseButton(size_t eventID)
 {
 	std::vector<size_t>::iterator id = std::find(m_starter.ids.begin(),
 			m_starter.ids.end(), eventID);
@@ -586,7 +586,7 @@ touch_gui_button_id TouchScreenGUI::getButtonID(s32 x, s32 y)
 	return after_last_element_id;
 }
 
-touch_gui_button_id TouchScreenGUI::getButtonID(int eventID)
+touch_gui_button_id TouchScreenGUI::getButtonID(size_t eventID)
 {
 	for (unsigned int i=0; i < after_last_element_id; i++) {
 		button_info* btn = &m_buttons[i];
@@ -628,9 +628,9 @@ bool TouchScreenGUI::isHUDButton(const SEvent &event)
 	return false;
 }
 
-bool TouchScreenGUI::isReleaseHUDButton(int eventID)
+bool TouchScreenGUI::isReleaseHUDButton(size_t eventID)
 {
-	std::map<int,irr::EKEY_CODE>::iterator iter = m_hud_ids.find(eventID);
+	std::map<size_t,irr::EKEY_CODE>::iterator iter = m_hud_ids.find(eventID);
 
 	if (iter != m_hud_ids.end()) {
 		SEvent* translated = new SEvent();
@@ -692,7 +692,7 @@ void TouchScreenGUI::handleButtonEvent(touch_gui_button_id button,
 }
 
 
-void TouchScreenGUI::handleReleaseEvent(int evt_id)
+void TouchScreenGUI::handleReleaseEvent(size_t evt_id)
 {
 	touch_gui_button_id button = getButtonID(evt_id);
 
@@ -769,7 +769,7 @@ void TouchScreenGUI::translateEvent(const SEvent &event)
 		toadd.Y  = event.TouchInput.Y;
 		m_known_ids.push_back(toadd);
 
-		int eventID = event.TouchInput.ID;
+		size_t eventID = event.TouchInput.ID;
 
 		touch_gui_button_id button =
 				getButtonID(event.TouchInput.X, event.TouchInput.Y);
@@ -812,7 +812,7 @@ void TouchScreenGUI::translateEvent(const SEvent &event)
 	}
 	else {
 		assert(event.TouchInput.Event == ETIE_MOVED);
-		int move_idx = event.TouchInput.ID;
+		size_t move_idx = event.TouchInput.ID;
 
 		if (getPointerPos(event.TouchInput.ID) ==
 				v2s32(event.TouchInput.X, event.TouchInput.Y)) {
