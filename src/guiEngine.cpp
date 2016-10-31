@@ -93,7 +93,7 @@ video::ITexture* MenuTextureSource::getTexture(const std::string &name, u32 *id)
 		return NULL;
 	m_to_delete.insert(name);
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(__IOS__)
 	video::IImage *image = m_driver->createImageFromFile(name.c_str());
 	if (image) {
 		image = Align2Npot2(image, m_driver);

@@ -40,6 +40,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #ifdef __ANDROID__
 #include <GLES/gl.h>
+#elif defined(__IOS__)
+#include <OpenGLES/ES1/gl.h>
 #endif
 
 /*
@@ -620,7 +622,7 @@ u32 TextureSource::generateTexture(const std::string &name)
 	video::ITexture *tex = NULL;
 
 	if (img != NULL) {
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(__IOS__)
 		img = Align2Npot2(img, driver);
 #endif
 		// Create texture from resulting image
@@ -723,7 +725,7 @@ void TextureSource::rebuildImagesAndTextures()
 	for (u32 i=0; i<m_textureinfo_cache.size(); i++){
 		TextureInfo *ti = &m_textureinfo_cache[i];
 		video::IImage *img = generateImage(ti->name);
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(__IOS__)
 		img = Align2Npot2(img, driver);
 		sanity_check(img->getDimension().Height == npot2(img->getDimension().Height));
 		sanity_check(img->getDimension().Width == npot2(img->getDimension().Width));
@@ -1051,8 +1053,7 @@ video::IImage* TextureSource::generateImage(const std::string &name)
 	return baseimg;
 }
 
-#ifdef __ANDROID__
-#include <GLES/gl.h>
+#if defined(__ANDROID__) || defined(__IOS__)
 /**
  * Check and align image to npot2 if required by hardware
  * @param image image to check for npot2 alignment
@@ -1130,7 +1131,7 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 	if (part_of_name.size() == 0 || part_of_name[0] != '[')
 	{
 		video::IImage *image = m_sourcecache.getOrLoad(part_of_name, m_device);
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(__IOS__)
 		image = Align2Npot2(image, driver);
 #endif
 		if (image == NULL) {

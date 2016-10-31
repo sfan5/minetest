@@ -140,7 +140,7 @@ public:
 
 IWritableTextureSource* createTextureSource(IrrlichtDevice *device);
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(__IOS__)
 video::IImage * Align2Npot2(video::IImage * image, video::IVideoDriver* driver);
 #endif
 
