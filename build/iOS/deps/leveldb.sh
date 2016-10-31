@@ -16,7 +16,7 @@ cd leveldb-src
 sed -i .old 's|^ifeq.*IOS.*|ifeq (0, 1)|g' Makefile
 CC="$IOS_CC $IOS_FLAGS" CXX="$IOS_CC $IOS_FLAGS" \
 TARGET_OS=IOS \
-make -j2 out-static/libleveldb.a
+make -j$(sysctl -n hw.ncpu) out-static/libleveldb.a
 
 [ -d ../leveldb ] && rm -r ../leveldb
 mkdir -p ../leveldb/lib

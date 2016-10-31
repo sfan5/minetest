@@ -15,7 +15,7 @@ cd libogg-src
 CC=$IOS_CC CFLAGS=$IOS_FLAGS \
 ./configure --host=arm-apple-darwin --prefix=/ \
 	--disable-shared --enable-static
-make -j2
+make -j$(sysctl -n hw.ncpu)
 
 mkdir -p ../libogg
 make DESTDIR=$PWD/../libogg install

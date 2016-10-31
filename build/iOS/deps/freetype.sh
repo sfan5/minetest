@@ -16,7 +16,7 @@ CC=$IOS_CC CFLAGS=$IOS_FLAGS \
 ./configure --host=arm-apple-darwin --prefix=/ \
 	--disable-shared --enable-static \
 	--with-png=no
-make -j2
+make -j$(sysctl -n hw.ncpu)
 
 mkdir -p ../freetype
 make DESTDIR=$PWD/../freetype install
