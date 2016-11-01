@@ -2029,6 +2029,7 @@
 				DEVELOPMENT_TEAM = G3ECY43N39;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
+					"NDEBUG=1",
 					"$(inherited)",
 					__IOS__,
 					"RUN_IN_PLACE=0",

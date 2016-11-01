@@ -48,7 +48,7 @@ extern int real_main(int argc, char *argv[]);
 void irrlicht_main() {
 	static const char *args[] = {
 		PROJECT_NAME,
-#ifdef DEBUG
+#ifndef NDEBUG
 		"--verbose",
 #else
 		"",
