@@ -1218,9 +1218,11 @@ static void show_pause_menu(GUIFormSpecMenu **cur_formspec,
 #endif
 	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_exit_menu;"
 			<< strgettext("Exit to Menu") << "]";
+#ifndef __IOS__
 	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_exit_os;"
 			<< strgettext("Exit to OS")   << "]"
-			<< "textarea[7.5,0.25;3.9,6.25;;" << control_text << ";]"
+#endif
+	os		<< "textarea[7.5,0.25;3.9,6.25;;" << control_text << ";]"
 			<< "textarea[0.4,0.25;3.5,6;;" << PROJECT_NAME_C "\n"
 			<< g_build_info << "\n"
 			<< "path_user = " << wrap_rows(porting::path_user, 20)
