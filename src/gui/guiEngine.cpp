@@ -227,6 +227,8 @@ bool GUIEngine::loadMainMenuScript()
 	return false;
 }
 
+void draw_sw_cursor(video::IVideoDriver *driver);
+
 /******************************************************************************/
 void GUIEngine::run()
 {
@@ -295,6 +297,7 @@ void GUIEngine::run()
 
 		RenderingEngine::get_gui_env()->drawAll();
 
+		draw_sw_cursor(driver);
 		driver->endScene();
 
 		if (m_clouds_enabled)

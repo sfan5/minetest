@@ -1,0 +1,180 @@
+diff --git a/include/IrrCompileConfig.h b/include/IrrCompileConfig.h
+index 4906aacc..6e210a9e 100644
+--- a/include/IrrCompileConfig.h
++++ b/include/IrrCompileConfig.h
+@@ -205,7 +205,7 @@ If not defined, Windows Multimedia library is used, which offers also broad supp
+ //! Define _IRR_COMPILE_WITH_OPENGL_ to compile the Irrlicht engine with OpenGL.
+ /** If you do not wish the engine to be compiled with OpenGL, comment this
+ define out. */
+-#define _IRR_COMPILE_WITH_OPENGL_
++//#define _IRR_COMPILE_WITH_OPENGL_
+ #ifdef NO_IRR_COMPILE_WITH_OPENGL_
+ #undef _IRR_COMPILE_WITH_OPENGL_
+ #endif
+diff --git a/make.sh b/make.sh
+new file mode 100755
+index 00000000..57926d56
+--- /dev/null
++++ b/make.sh
+@@ -0,0 +1,4 @@
++#!/bin/bash
++# packages needed on the rpi: libx11-dev libxxf86vm-dev
++cd source/Irrlicht
++exec make CC=armv6-linux-gnueabihf-clang CXX=armv6-linux-gnueabihf-clang++ "$@"
+diff --git a/source/Irrlicht/CEGLManager.h b/source/Irrlicht/CEGLManager.h
+index e56b3c9e..6a118e51 100755
+--- a/source/Irrlicht/CEGLManager.h
++++ b/source/Irrlicht/CEGLManager.h
+@@ -12,7 +12,7 @@
+ #if defined(_IRR_COMPILE_WITH_ANDROID_DEVICE_) || defined(_IRR_COMPILE_WITH_FB_DEVICE_) || defined(_IRR_COMPILE_WITH_WINDOWS_DEVICE_) || defined(__EMSCRIPTEN__)
+ #include <EGL/egl.h>
+ #else
+-#include <GLES/egl.h>
++#include <EGL/egl.h>
+ #endif
+ 
+ #include "SIrrCreationParameters.h"
+diff --git a/source/Irrlicht/CIrrDeviceLinux.cpp b/source/Irrlicht/CIrrDeviceLinux.cpp
+index 13201fa8..1b737d7e 100644
+--- a/source/Irrlicht/CIrrDeviceLinux.cpp
++++ b/source/Irrlicht/CIrrDeviceLinux.cpp
+@@ -38,6 +38,8 @@
+ #include <X11/Xcursor/Xcursor.h>
+ #endif
+ 
++#include <bcm_host.h>
++
+ #if defined _IRR_COMPILE_WITH_JOYSTICK_EVENTS_
+ #include <fcntl.h>
+ #include <unistd.h>
+@@ -130,6 +132,9 @@ CIrrDeviceLinux::CIrrDeviceLinux(const SIrrlichtCreationParameters& param)
+ 	Operator = new COSOperator(linuxversion, this);
+ 	os::Printer::log(linuxversion.c_str(), ELL_INFORMATION);
+ 
++    bcm_host_init();
++    graphics_get_display_size(0, &Width, &Height); // overwrite window size
++
+ 	// create keymap
+ 	createKeyMap();
+ 
+@@ -573,6 +578,43 @@ bool CIrrDeviceLinux::createWindow()
+ 	return true;
+ }
+ 
++static EGL_DISPMANX_WINDOW_T *rpiCreateWindow(u32 Width, u32 Height)
++{
++	static EGL_DISPMANX_WINDOW_T nativewindow;
++
++	VC_RECT_T dst_rect;
++	dst_rect.x = 0;
++	dst_rect.y = 0;
++	dst_rect.width = Width;
++	dst_rect.height = Height;
++
++	VC_RECT_T src_rect;
++	src_rect.x = 0;
++	src_rect.y = 0;
++	src_rect.width = Width << 16;
++	src_rect.height = Height << 16;
++
++	DISPMANX_DISPLAY_HANDLE_T display;
++	DISPMANX_UPDATE_HANDLE_T update;
++	display = vc_dispmanx_display_open(0);
++	update = vc_dispmanx_update_start(0);
++
++	VC_DISPMANX_ALPHA_T alpha;
++	alpha.flags = DISPMANX_FLAGS_ALPHA_FIXED_ALL_PIXELS;
++	alpha.opacity = 255;
++	alpha.mask = 0;
++
++	DISPMANX_ELEMENT_HANDLE_T element;
++	element = vc_dispmanx_element_add(update, display, 0, &dst_rect, 0, &src_rect,
++		DISPMANX_PROTECTION_NONE, &alpha, 0, DISPMANX_NO_ROTATE);
++
++	nativewindow.element = element;
++	nativewindow.width = Width;
++	nativewindow.height = Height;
++	vc_dispmanx_update_submit_sync(update);
++
++	return &nativewindow;
++}
+ 
+ //! create the driver
+ void CIrrDeviceLinux::createDriver()
+@@ -613,8 +655,8 @@ void CIrrDeviceLinux::createDriver()
+ #ifdef _IRR_COMPILE_WITH_OGLES1_
+ 		{
+ 			video::SExposedVideoData data;
+-			data.OpenGLLinux.X11Window = XWindow;
+-			data.OpenGLLinux.X11Display = XDisplay;
++			data.OpenGLLinux.X11Window = reinterpret_cast<Window>(rpiCreateWindow(Width, Height));
++			data.OpenGLLinux.X11Display = EGL_DEFAULT_DISPLAY;
+ 
+ 			ContextManager = new video::CEGLManager();
+ 			ContextManager->initialize(CreationParams, data);
+@@ -629,8 +671,8 @@ void CIrrDeviceLinux::createDriver()
+ #ifdef _IRR_COMPILE_WITH_OGLES2_
+ 		{
+ 			video::SExposedVideoData data;
+-			data.OpenGLLinux.X11Window = XWindow;
+-			data.OpenGLLinux.X11Display = XDisplay;
++			data.OpenGLLinux.X11Window = reinterpret_cast<Window>(rpiCreateWindow(Width, Height));
++			data.OpenGLLinux.X11Display = EGL_DEFAULT_DISPLAY;
+ 
+ 			ContextManager = new video::CEGLManager();
+ 			ContextManager->initialize(CreationParams, data);
+@@ -1322,6 +1364,14 @@ video::IVideoModeList* CIrrDeviceLinux::getVideoModeList()
+ 			s32 defaultDepth=DefaultDepth(XDisplay,Screennr);
+ 			#endif
+ 
++            if (true)
++            {
++                core::dimension2d<u32> screen;
++                graphics_get_display_size(0, &screen.Width, &screen.Height);
++                VideoModeList->setDesktop(defaultDepth, screen);
++                VideoModeList->addMode(screen, defaultDepth);
++            }
++            else
+ 			#ifdef _IRR_LINUX_X11_VIDMODE_
+ 			if (XF86VidModeQueryExtension(XDisplay, &eventbase, &errorbase))
+ 			{
+diff --git a/source/Irrlicht/COGLESExtensionHandler.cpp b/source/Irrlicht/COGLESExtensionHandler.cpp
+index 4badf221..e270ac71 100644
+--- a/source/Irrlicht/COGLESExtensionHandler.cpp
++++ b/source/Irrlicht/COGLESExtensionHandler.cpp
+@@ -16,7 +16,7 @@
+ #if defined(_IRR_COMPILE_WITH_ANDROID_DEVICE_) || defined(_IRR_COMPILE_WITH_FB_DEVICE_) || defined(_IRR_COMPILE_WITH_WINDOWS_DEVICE_)
+ #include <EGL/egl.h>
+ #else
+-#include <GLES/egl.h>
++#include <EGL/egl.h>
+ #endif
+ #endif
+ 
+diff --git a/source/Irrlicht/Makefile b/source/Irrlicht/Makefile
+index b5208e7d..6186ae13 100644
+--- a/source/Irrlicht/Makefile
++++ b/source/Irrlicht/Makefile
+@@ -70,6 +70,7 @@ emscripten: EMSCRIPTEN=1
+ #Compiler flags
+ 
+ CXXINCS = -I../../include -Izlib -Ijpeglib -Ilibpng
++CXXINCS += -I/var/tmp/rpi/sysroot/opt/vc/include
+ CPPFLAGS += $(CXXINCS) -DIRRLICHT_EXPORTS=1
+ CXXFLAGS += -Wall -pipe -fno-exceptions -fno-rtti -fstrict-aliasing
+ #CXXFLAGS += -std=gnu++11 -U__STRICT_ANSI__
+diff --git a/source/Irrlicht/gles2-ext.h b/source/Irrlicht/gles2-ext.h
+index e3c452be..f8ead8b8 100644
+--- a/source/Irrlicht/gles2-ext.h
++++ b/source/Irrlicht/gles2-ext.h
+@@ -38,6 +38,10 @@ extern "C" {
+ #define GL_APIENTRYP GL_APIENTRY*
+ #endif
+ 
++typedef khronos_int64_t GLint64;
++typedef khronos_uint64_t GLuint64;
++typedef void *GLsync;
++
+ /* Generated on date 20170808 */
+ 
+ /* Generated C header for:

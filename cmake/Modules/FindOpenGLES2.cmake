@@ -28,15 +28,15 @@ else()
 	# Unix
 	find_path(OPENGLES2_INCLUDE_DIR GLES2/gl2.h
 		PATHS /usr/openwin/share/include
-			/opt/graphics/OpenGL/include
+			/opt/graphics/OpenGL/include /opt/vc/include
 			/usr/X11R6/include
 			/usr/include
 	)
 
 	find_library(OPENGLES2_LIBRARY
-		NAMES GLESv2
+		NAMES GLESv2 brcmGLESv2
 		PATHS /opt/graphics/OpenGL/lib
-			/usr/openwin/lib
+			/usr/openwin/lib /opt/vc/lib
 			/usr/X11R6/lib
 			/usr/lib
 	)
@@ -46,15 +46,15 @@ else()
 
 	find_path(EGL_INCLUDE_DIR EGL/egl.h
 		PATHS /usr/openwin/share/include
-			/opt/graphics/OpenGL/include
+			/opt/graphics/OpenGL/include /opt/vc/include
 			/usr/X11R6/include
 			/usr/include
 	)
 
 	find_library(EGL_LIBRARY
-		NAMES EGL
+		NAMES EGL brcmEGL
 		PATHS /opt/graphics/OpenGL/lib
-			/usr/openwin/lib
+			/usr/openwin/lib /opt/vc/lib
 			/usr/X11R6/lib
 			/usr/lib
 	)

@@ -442,6 +442,19 @@ bool RenderingEngine::setXorgWindowIconFromPath(const std::string &icon_file)
 	return true;
 }
 
+void draw_sw_cursor(video::IVideoDriver *driver)
+{
+	auto device = RenderingEngine::get_raw_device();
+	if(!device->getCursorControl()->isVisible())
+		return;
+
+	v2s32 pos = device->getCursorControl()->getPosition();
+	auto color = video::SColor(255, 28, 28, 28);
+	driver->draw2DLine(pos, pos+v2s32(11,12), color);
+	driver->draw2DLine(pos, pos+v2s32(0,16), color);
+	driver->draw2DLine(pos+v2s32(11,12), pos+v2s32(0,16), color);
+}
+
 /*
 	Draws a screen with a single text on it.
 	Text will be removed when the screen is drawn the next time.
@@ -512,6 +525,7 @@ void RenderingEngine::_draw_load_screen(const std::wstring &text,
 	}
 
 	guienv->drawAll();
+	draw_sw_cursor(get_video_driver());
 	get_video_driver()->endScene();
 	guitext->remove();
 }
@@ -533,6 +547,7 @@ void RenderingEngine::_draw_menu_scene(gui::IGUIEnvironment *guienv,
 		get_video_driver()->beginScene(true, true, video::SColor(255, 0, 0, 0));
 
 	guienv->drawAll();
+	draw_sw_cursor(get_video_driver());
 	get_video_driver()->endScene();
 }
 
@@ -583,6 +598,7 @@ void RenderingEngine::_draw_scene(video::SColor skycolor, bool show_hud,
 		bool show_minimap, bool draw_wield_tool, bool draw_crosshair)
 {
 	core->draw(skycolor, show_hud, show_minimap, draw_wield_tool, draw_crosshair);
+	draw_sw_cursor(get_video_driver());
 }
 
 const char *RenderingEngine::getVideoDriverName(irr::video::E_DRIVER_TYPE type)
