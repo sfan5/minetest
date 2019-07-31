@@ -53,6 +53,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #if USE_REDIS
 #include "database/database-redis.h"
 #endif
+#if ENABLE_MYSQL
+#include "database/database-mysql.h"
+#endif
 #if USE_POSTGRESQL
 #include "database/database-postgresql.h"
 #endif
@@ -1909,6 +1912,10 @@ MapDatabase *ServerMap::createDatabase(
 	#if USE_REDIS
 	if (name == "redis")
 		return new Database_Redis(conf);
+	#endif
+	#if ENABLE_MYSQL
+	if (name == "mysql")
+		return new Database_MySQL(conf);
 	#endif
 	#if USE_POSTGRESQL
 	if (name == "postgresql") {
