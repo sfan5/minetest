@@ -22,7 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "emerge.h"
 
 #include <iostream>
-#include <queue>
+#include <deque>
 
 #include "util/container.h"
 #include "util/thread.h"
@@ -45,6 +45,18 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "settings.h"
 #include "voxel.h"
 
+struct QueuedBlock {
+	v3s16 pos;
+	std::string *reason;
+	u64 time;
+
+	QueuedBlock(const v3s16 &pos, const std::string &reason) : pos(pos) {
+		this->reason = new std::string(reason);
+		time = porting::getTimeS();
+	}
+	inline void free() { delete this->reason; }
+};
+
 class EmergeThread : public Thread {
 public:
 	bool enable_mapgen_debug_info;
@@ -57,9 +69,10 @@ public:
 	void signal();
 
 	// Requires queue mutex held
-	bool pushBlock(const v3s16 &pos);
+	bool pushBlock(const v3s16 &pos, const std::string &reason);
 
 	void cancelPendingItems();
+	void printPendingItems();
 
 	static void runCompletionCallbacks(
 		const v3s16 &pos, EmergeAction action,
@@ -72,7 +85,7 @@ private:
 	Mapgen *m_mapgen;
 
 	Event m_queue_event;
-	std::queue<v3s16> m_block_queue;
+	std::deque<QueuedBlock> m_block_queue;
 
 	bool popBlockEmerge(v3s16 *pos, BlockEmergeData *bedata);
 
@@ -305,6 +318,7 @@ bool EmergeManager::isRunning()
 bool EmergeManager::enqueueBlockEmerge(
 	session_t peer_id,
 	v3s16 blockpos,
+	const std::string &reason,
 	bool allow_generate,
 	bool ignore_queue_limits)
 {
@@ -314,12 +328,13 @@ bool EmergeManager::enqueueBlockEmerge(
 	if (ignore_queue_limits)
 		flags |= BLOCK_EMERGE_FORCE_QUEUE;
 
-	return enqueueBlockEmergeEx(blockpos, peer_id, flags, NULL, NULL);
+	return enqueueBlockEmergeEx(blockpos, reason, peer_id, flags, NULL, NULL);
 }
 
 
 bool EmergeManager::enqueueBlockEmergeEx(
 	v3s16 blockpos,
+	const std::string &reason,
 	session_t peer_id,
 	u16 flags,
 	EmergeCompletionCallback callback,
@@ -327,6 +342,10 @@ bool EmergeManager::enqueueBlockEmergeEx(
 {
 	EmergeThread *thread = NULL;
 	bool entry_already_exists = false;
+
+	std::string reason_ = reason;
+	if (peer_id != PEER_ID_INEXISTENT)
+		reason_.append(" (for peer ").append(itos(peer_id)).append(")");
 
 	{
 		MutexAutoLock queuelock(m_queue_mutex);
@@ -339,7 +358,7 @@ bool EmergeManager::enqueueBlockEmergeEx(
 			return true;
 
 		thread = getOptimalThread();
-		thread->pushBlock(blockpos);
+		thread->pushBlock(blockpos, reason_);
 	}
 
 	thread->signal();
@@ -418,14 +437,20 @@ bool EmergeManager::pushBlockEmergeData(
 	u16 &count_peer = m_peer_queue_count[peer_requested];
 
 	if ((flags & BLOCK_EMERGE_FORCE_QUEUE) == 0) {
-		if (m_blocks_enqueued.size() >= m_qlimit_total)
+		if (m_blocks_enqueued.size() >= m_qlimit_total) {
+			std::cout << "rejecting emerge because absolute limit ("
+				<< m_qlimit_total << ") reached" << std::endl;
 			return false;
+		}
 
 		if (peer_requested != PEER_ID_INEXISTENT) {
 			u16 qlimit_peer = (flags & BLOCK_EMERGE_ALLOW_GEN) ?
 				m_qlimit_generate : m_qlimit_diskonly;
-			if (count_peer >= qlimit_peer)
+			if (count_peer >= qlimit_peer) {
+				std::cout << "rejecting emerge for peer " << peer_requested
+					<< " because limit (" << qlimit_peer << ") reached" << std::endl;
 				return false;
+			}
 		}
 	}
 
@@ -519,12 +544,23 @@ void EmergeThread::signal()
 }
 
 
-bool EmergeThread::pushBlock(const v3s16 &pos)
+bool EmergeThread::pushBlock(const v3s16 &pos, const std::string &reason)
 {
-	m_block_queue.push(pos);
+	m_block_queue.emplace_back(pos, reason);
 	return true;
 }
 
+
+void EmergeThread::printPendingItems()
+{
+	MutexAutoLock queuelock(m_emerge->m_queue_mutex);
+	u64 now = porting::getTimeS();
+	std::cout << "contents of queue (" << m_name << "):" << std::endl;
+	for (QueuedBlock q : m_block_queue) {
+		std::cout << "    " << PP(q.pos) << " " << *q.reason << " since "
+			<< (now - q.time) << "s" << std::endl;
+	}
+}
 
 void EmergeThread::cancelPendingItems()
 {
@@ -532,14 +568,14 @@ void EmergeThread::cancelPendingItems()
 
 	while (!m_block_queue.empty()) {
 		BlockEmergeData bedata;
-		v3s16 pos;
+		QueuedBlock q = m_block_queue.front();
+		m_block_queue.pop_front();
 
-		pos = m_block_queue.front();
-		m_block_queue.pop();
+		m_emerge->popBlockEmergeData(q.pos, &bedata);
 
-		m_emerge->popBlockEmergeData(pos, &bedata);
+		runCompletionCallbacks(q.pos, EMERGE_CANCELLED, bedata.callbacks);
 
-		runCompletionCallbacks(pos, EMERGE_CANCELLED, bedata.callbacks);
+		q.free();
 	}
 }
 
@@ -566,8 +602,10 @@ bool EmergeThread::popBlockEmerge(v3s16 *pos, BlockEmergeData *bedata)
 	if (m_block_queue.empty())
 		return false;
 
-	*pos = m_block_queue.front();
-	m_block_queue.pop();
+	QueuedBlock q = m_block_queue.front();
+	m_block_queue.pop_front();
+	*pos = q.pos;
+	q.free();
 
 	m_emerge->popBlockEmergeData(*pos, bedata);
 
@@ -667,6 +705,7 @@ void *EmergeThread::run()
 	m_emerge = m_server->m_emerge;
 	m_mapgen = m_emerge->m_mapgens[id];
 	enable_mapgen_debug_info = m_emerge->enable_mapgen_debug_info;
+	u64 timer = porting::getTimeS();
 
 	try {
 	while (!stopRequested()) {
@@ -679,6 +718,12 @@ void *EmergeThread::run()
 		if (!popBlockEmerge(&pos, &bedata)) {
 			m_queue_event.wait();
 			continue;
+		}
+
+		u64 now = porting::getTimeS();
+		if (now - timer >= 30) {
+			timer = now;
+			printPendingItems();
 		}
 
 		if (blockpos_over_max_limit(pos))

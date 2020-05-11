@@ -1692,7 +1692,7 @@ MapBlock *ServerMap::getBlockOrEmerge(v3s16 p3d)
 {
 	MapBlock *block = getBlockNoCreateNoEx(p3d);
 	if (block == NULL)
-		m_emerge->enqueueBlockEmerge(PEER_ID_INEXISTENT, p3d, false);
+		m_emerge->enqueueBlockEmerge(PEER_ID_INEXISTENT, p3d, "added active blocks", false);
 
 	return block;
 }

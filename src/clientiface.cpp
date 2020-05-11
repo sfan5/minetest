@@ -356,7 +356,7 @@ void RemoteClient::GetNextBlocks (
 				Add inexistent block to emerge queue.
 			*/
 			if (block == NULL || surely_not_found_on_disk || block_is_invalid) {
-				if (emerge->enqueueBlockEmerge(peer_id, p, generate)) {
+				if (emerge->enqueueBlockEmerge(peer_id, p, "near player", generate)) {
 					if (nearest_emerged_d == -1)
 						nearest_emerged_d = d;
 				} else {

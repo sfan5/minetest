@@ -161,11 +161,13 @@ public:
 	bool enqueueBlockEmerge(
 		session_t peer_id,
 		v3s16 blockpos,
+		const std::string &reason,
 		bool allow_generate,
 		bool ignore_queue_limits=false);
 
 	bool enqueueBlockEmergeEx(
 		v3s16 blockpos,
+		const std::string &reason,
 		session_t peer_id,
 		u16 flags,
 		EmergeCompletionCallback callback,

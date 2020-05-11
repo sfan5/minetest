@@ -1064,7 +1064,7 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 				infostream << "Server: Not punching: Node not found. "
 					"Adding block to emerge queue." << std::endl;
 				m_emerge->enqueueBlockEmerge(peer_id, getNodeBlockPos(p_above),
-					false);
+					"missing during interact", false);
 			}
 
 			if (n.getContent() != CONTENT_IGNORE)
@@ -1133,7 +1133,7 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 				infostream << "Server: Not finishing digging: Node not found. "
 					"Adding block to emerge queue." << std::endl;
 				m_emerge->enqueueBlockEmerge(peer_id, getNodeBlockPos(p_above),
-					false);
+					"missing during interact", false);
 			}
 
 			/* Cheat prevention */
