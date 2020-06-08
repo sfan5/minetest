@@ -77,6 +77,7 @@ enum LocalClientState {
 
 class PacketCounter
 {
+	friend class GroupedPacketCounter;
 public:
 	PacketCounter() = default;
 
@@ -100,6 +101,27 @@ public:
 private:
 	// command, count
 	std::map<u16, u32> m_packets;
+};
+
+class GroupedPacketCounter
+{
+public:
+	GroupedPacketCounter() = default;
+
+	void add(std::string id, u16 cmd)
+	{
+		map[id].add(cmd);
+	}
+
+	void clear()
+	{
+		map.clear();
+	}
+
+	void print(std::ostream &o,
+		const std::function<const char*(u16)> &name) const;
+
+	std::map<std::string, PacketCounter> map;
 };
 
 class ClientScripting;
@@ -430,6 +452,9 @@ public:
 	{
 		return m_env.getLocalPlayer()->formspec_prepend;
 	}
+
+	GroupedPacketCounter m_objectcounter;
+
 private:
 	void loadMods();
 

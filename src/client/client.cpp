@@ -82,6 +82,18 @@ void PacketCounter::print(std::ostream &o) const
 	}
 }
 
+void GroupedPacketCounter::print(std::ostream &o,
+	const std::function<const char*(u16)> &name) const
+{
+	for (const auto &n : map) {
+		o << n.first << ": sum=" << n.second.sum() << std::endl;;
+		for (const auto &it : n.second.m_packets) {
+			o << "  cmd " << it.first << " (" << name(it.first) << ") count "
+				<< it.second << std::endl;
+		}
+	}
+}
+
 /*
 	Client
 */
@@ -350,6 +362,28 @@ void Client::step(float dtime)
 					<< "sum=" << sum << " avg=" << avg << "/s" << std::endl;
 			m_packetcounter.print(infostream);
 			m_packetcounter.clear();
+
+			const static auto name2 = [] (u16 cmd) -> const char* {
+				switch(cmd) {
+				case AO_CMD_SET_PROPERTIES: return "AO_CMD_SET_PROPERTIES";
+				case AO_CMD_UPDATE_POSITION: return "AO_CMD_UPDATE_POSITION";
+				case AO_CMD_SET_TEXTURE_MOD: return "AO_CMD_SET_TEXTURE_MOD";
+				case AO_CMD_SET_SPRITE: return "AO_CMD_SET_SPRITE";
+				case AO_CMD_PUNCHED: return "AO_CMD_PUNCHED";
+				case AO_CMD_UPDATE_ARMOR_GROUPS: return "AO_CMD_UPDATE_ARMOR_GROUPS";
+				case AO_CMD_SET_ANIMATION: return "AO_CMD_SET_ANIMATION";
+				case AO_CMD_SET_BONE_POSITION: return "AO_CMD_SET_BONE_POSITION";
+				case AO_CMD_ATTACH_TO: return "AO_CMD_ATTACH_TO";
+				case AO_CMD_SET_PHYSICS_OVERRIDE: return "AO_CMD_SET_PHYSICS_OVERRIDE";
+				case AO_CMD_OBSOLETE1: return "AO_CMD_OBSOLETE1";
+				case AO_CMD_SPAWN_INFANT: return "AO_CMD_SPAWN_INFANT";
+				case AO_CMD_SET_ANIMATION_SPEED: return "AO_CMD_SET_ANIMATION_SPEED";
+				default: return "?";
+				}
+			};
+			infostream << "Object packetcounter:" << std::endl;
+			m_objectcounter.print(infostream, name2);
+			m_objectcounter.clear();
 		}
 	}
 

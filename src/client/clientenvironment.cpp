@@ -416,6 +416,9 @@ void ClientEnvironment::processActiveObjectMessage(u16 id, const std::string &da
 		return;
 	}
 
+	std::string ident = reinterpret_cast<GenericCAO*>(obj)->describingText();
+	m_client->m_objectcounter.add(ident, static_cast<u16>(data[0]));
+
 	try {
 		obj->processMessage(data);
 	} catch (SerializationError &e) {

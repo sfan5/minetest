@@ -277,6 +277,22 @@ public:
 
 	std::string debugInfoText();
 
+	std::string describingText()
+	{
+		if (m_is_local_player)
+			return "Local player";
+		else if (m_is_player)
+			return "Other players";
+		std::string s = "<" + m_prop.visual;
+		if (m_prop.visual == "wielditem" || m_prop.visual == "item")
+			s.append(": ").append(m_prop.wield_item);
+		else if (m_prop.visual == "mesh")
+			s.append(": ").append(m_prop.mesh);
+		else if (m_prop.visual == "upright_sprite" || m_prop.visual == "sprite")
+			s.append(": ").append(m_prop.textures[0]);
+		return s.append(">");
+	}
+
 	std::string infoText()
 	{
 		return m_prop.infotext;
