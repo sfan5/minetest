@@ -911,16 +911,16 @@ int ModApiMainMenu::l_do_async_callback(lua_State *L)
 
 	size_t func_length, param_length;
 	const char* serialized_func_raw = luaL_checklstring(L, 1, &func_length);
-
 	const char* serialized_param_raw = luaL_checklstring(L, 2, &param_length);
 
 	sanity_check(serialized_func_raw != NULL);
 	sanity_check(serialized_param_raw != NULL);
 
-	std::string serialized_func = std::string(serialized_func_raw, func_length);
-	std::string serialized_param = std::string(serialized_param_raw, param_length);
+	u32 jobId = engine->queueAsync(
+		std::string(serialized_func_raw, func_length),
+		std::string(serialized_param_raw, param_length));
 
-	lua_pushinteger(L, engine->queueAsync(serialized_func, serialized_param));
+	lua_pushinteger(L, jobId);
 
 	return 1;
 }

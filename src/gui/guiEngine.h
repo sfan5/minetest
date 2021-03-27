@@ -174,8 +174,8 @@ public:
 	}
 
 	/** pass async callback to scriptengine **/
-	unsigned int queueAsync(const std::string &serialized_fct,
-			const std::string &serialized_params);
+	u32 queueAsync(std::string &&serialized_func,
+			std::string &&serialized_params);
 
 private:
 
