@@ -228,14 +228,17 @@ void* AsyncWorkerThread::run()
 
 		luaL_checktype(L, -1, LUA_TFUNCTION);
 
-		// Call it
-		lua_pushlstring(L,
-				toProcess.serializedFunction.data(),
-				toProcess.serializedFunction.size());
+		if (luaL_loadbuffer(L, toProcess.serializedFunction.data(),
+				toProcess.serializedFunction.size(), "=(async)")) {
+			errorstream << "ASYNC WORKER: Unable to deserialize function" << std::endl;
+			lua_pushnil(L);
+		}
+
 		lua_pushlstring(L,
 				toProcess.serializedParams.data(),
 				toProcess.serializedParams.size());
 
+		// Call it
 		int result = lua_pcall(L, 2, 1, error_handler);
 		if (result) {
 			PCALL_RES(result);
