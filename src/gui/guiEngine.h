@@ -173,10 +173,6 @@ public:
 		return m_scriptdir;
 	}
 
-	/** pass async callback to scriptengine **/
-	u32 queueAsync(std::string &&serialized_func,
-			std::string &&serialized_params);
-
 private:
 
 	/** find and run the main menu script */

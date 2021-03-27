@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "lua_api/l_internal.h"
 #include "common/c_content.h"
 #include "cpp_api/s_async.h"
+#include "scripting_mainmenu.h"
 #include "gui/guiEngine.h"
 #include "gui/guiMainMenu.h"
 #include "gui/guiKeyChangeMenu.h"
@@ -907,7 +908,7 @@ int ModApiMainMenu::l_open_dir(lua_State *L)
 /******************************************************************************/
 int ModApiMainMenu::l_do_async_callback(lua_State *L)
 {
-	GUIEngine* engine = getGuiEngine(L);
+	MainMenuScripting *script = getScriptApi<MainMenuScripting>(L);
 
 	size_t func_length, param_length;
 	const char* serialized_func_raw = luaL_checklstring(L, 1, &func_length);
@@ -916,7 +917,7 @@ int ModApiMainMenu::l_do_async_callback(lua_State *L)
 	sanity_check(serialized_func_raw != NULL);
 	sanity_check(serialized_param_raw != NULL);
 
-	u32 jobId = engine->queueAsync(
+	u32 jobId = script->queueAsync(
 		std::string(serialized_func_raw, func_length),
 		std::string(serialized_param_raw, param_length));
 
