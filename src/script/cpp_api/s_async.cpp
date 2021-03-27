@@ -37,22 +37,26 @@ extern "C" {
 AsyncEngine::~AsyncEngine()
 {
 
+	actionstream << "Request all threads to stop" << std::endl;
 	// Request all threads to stop
 	for (AsyncWorkerThread *workerThread : workerThreads) {
 		workerThread->stop();
 	}
 
+	actionstream << "Wake up all threads" << std::endl;
 	// Wake up all threads
 	for (auto it : workerThreads) {
 		(void)it;
 		jobQueueCounter.post();
 	}
 
+	actionstream << "Wait for threads to finish" << std::endl;
 	// Wait for threads to finish
 	for (AsyncWorkerThread *workerThread : workerThreads) {
 		workerThread->wait();
 	}
 
+	actionstream << "Force kill all threads" << std::endl;
 	// Force kill all threads
 	for (AsyncWorkerThread *workerThread : workerThreads) {
 		delete workerThread;
@@ -232,7 +236,12 @@ void* AsyncWorkerThread::run()
 		// Call it
 		int result = lua_pcall(L, 2, 1, error_handler);
 		if (result) {
-			PCALL_RES(result);
+			try {
+				PCALL_RES(result);
+			} catch (const ModError &e) {
+				errorstream << e.what() << std::endl;
+				// TODO jobDispatcher->errorHandler(...)
+			}
 		} else {
 			// Fetch result
 			size_t length;
@@ -243,7 +252,8 @@ void* AsyncWorkerThread::run()
 		lua_pop(L, 1);  // Pop retval
 
 		// Put job result
-		jobDispatcher->putJobResult(std::move(j));
+		if (!j.result.empty())
+			jobDispatcher->putJobResult(std::move(j));
 	}
 
 	lua_pop(L, 2);  // Pop core and error handler

@@ -1475,6 +1475,8 @@ void ServerEnvironment::step(float dtime)
 	*/
 	m_script->environment_Step(dtime);
 
+	m_script->stepAsync();
+
 	/*
 		Step active objects
 	*/
