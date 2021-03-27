@@ -237,7 +237,7 @@ void* AsyncWorkerThread::run()
 		int result = lua_pcall(L, 2, 1, error_handler);
 		if (result) {
 			try {
-				PCALL_RES(result);
+				scriptError(result, "<async>");
 			} catch (const ModError &e) {
 				errorstream << e.what() << std::endl;
 				// TODO jobDispatcher->errorHandler(...)

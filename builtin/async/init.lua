@@ -8,7 +8,7 @@ function core.job_processor(func, serialized_params)
 
 	print('will call ' .. tostring(func) .. ' with ' .. tostring(#params.arg) .. ' args')
 
-	--core.set_last_run_mod(param.mod_origin) -- TODO
+	core.set_last_run_mod(params.mod_origin)
 	local retval = {func(unpack(params.arg))}
 
 	return core.serialize(retval)

@@ -499,31 +499,6 @@ int ModApiServer::l_notify_authentication_modified(lua_State *L)
 	return 0;
 }
 
-// get_last_run_mod()
-int ModApiServer::l_get_last_run_mod(lua_State *L)
-{
-	NO_MAP_LOCK_REQUIRED;
-	lua_rawgeti(L, LUA_REGISTRYINDEX, CUSTOM_RIDX_CURRENT_MOD_NAME);
-	std::string current_mod = readParam<std::string>(L, -1, "");
-	if (current_mod.empty()) {
-		lua_pop(L, 1);
-		lua_pushstring(L, getScriptApiBase(L)->getOrigin().c_str());
-	}
-	return 1;
-}
-
-// set_last_run_mod(modname)
-int ModApiServer::l_set_last_run_mod(lua_State *L)
-{
-	NO_MAP_LOCK_REQUIRED;
-#ifdef SCRIPTAPI_DEBUG
-	const char *mod = lua_tostring(L, 1);
-	getScriptApiBase(L)->setOriginDirect(mod);
-	//printf(">>>> last mod set from Lua: %s\n", mod);
-#endif
-	return 0;
-}
-
 int ModApiServer::l_do_async_callback(lua_State *L)
 {
 	ServerScripting *script = getScriptApi<ServerScripting>(L);
@@ -588,9 +563,6 @@ void ModApiServer::Initialize(lua_State *L, int top)
 	API_FCT(remove_player);
 	API_FCT(unban_player_or_ip);
 	API_FCT(notify_authentication_modified);
-
-	API_FCT(get_last_run_mod);
-	API_FCT(set_last_run_mod);
 
 	API_FCT(do_async_callback);
 }
