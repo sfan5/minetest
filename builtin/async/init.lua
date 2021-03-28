@@ -6,10 +6,9 @@ core.log("action", "Initializing Asynchronous environment for game")
 function core.job_processor(func, serialized_params)
 	local params = core.deserialize(serialized_params)
 
-	print('will call ' .. tostring(func) .. ' with ' .. tostring(#params.arg) .. ' args')
+	print('will call ' .. tostring(func) .. ' with ' .. tostring(#params) .. ' args')
 
-	core.set_last_run_mod(params.mod_origin)
-	local retval = {func(unpack(params.arg))}
+	local retval = {func(unpack(params))}
 
 	return core.serialize(retval)
 end

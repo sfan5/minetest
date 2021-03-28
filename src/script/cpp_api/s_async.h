@@ -45,6 +45,8 @@ struct LuaJobInfo
 	std::string params;
 	// Result of function call (serialized)
 	std::string result;
+	// Name of the mod who invoked this call
+	std::string mod_origin;
 	// JobID used to identify a job and match it to callback
 	u32 id;
 };
@@ -92,7 +94,8 @@ public:
 	 * @param params Serialized parameters
 	 * @return jobid The job is queued
 	 */
-	u32 queueAsyncJob(std::string &&func, std::string &&params);
+	u32 queueAsyncJob(std::string &&func, std::string &&params,
+			const std::string &mod_origin = "");
 
 	/**
 	 * Engine step to process finished jobs

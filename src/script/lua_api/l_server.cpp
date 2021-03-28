@@ -505,6 +505,7 @@ int ModApiServer::l_do_async_callback(lua_State *L)
 
 	luaL_checktype(L, 1, LUA_TFUNCTION);
 	luaL_checktype(L, 2, LUA_TSTRING);
+	luaL_checktype(L, 3, LUA_TSTRING);
 
 	// Safely call string.dump on the function
 	lua_rawgeti(L, LUA_REGISTRYINDEX, CUSTOM_RIDX_GLOBALS_BACKUP);
@@ -522,9 +523,11 @@ int ModApiServer::l_do_async_callback(lua_State *L)
 
 	printf("func_l: %zu param_l: %zu\n", func_length, param_length);
 
+	std::string mod_origin = readParam<std::string>(L, 3);
+
 	u32 jobId = script->queueAsync(
 		std::string(serialized_func_raw, func_length),
-		std::string(serialized_param_raw, param_length));
+		std::string(serialized_param_raw, param_length), mod_origin);
 
 	lua_settop(L, 0);
 	lua_pushinteger(L, jobId);

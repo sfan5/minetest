@@ -54,7 +54,7 @@ public:
 
 	// Pass job to async threads
 	u32 queueAsync(std::string &&serialized_func,
-		std::string &&serialized_param);
+		std::string &&serialized_param, const std::string &mod_origin);
 
 private:
 	void InitializeModApi(lua_State *L, int top);

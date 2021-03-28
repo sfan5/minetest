@@ -32,6 +32,7 @@ extern "C" {
 #include "filesys.h"
 #include "porting.h"
 #include "common/c_internal.h"
+#include "lua_api/l_base.h"
 
 /******************************************************************************/
 AsyncEngine::~AsyncEngine()
@@ -84,7 +85,8 @@ void AsyncEngine::initialize(unsigned int numEngines)
 }
 
 /******************************************************************************/
-u32 AsyncEngine::queueAsyncJob(std::string &&func, std::string &&params)
+u32 AsyncEngine::queueAsyncJob(std::string &&func, std::string &&params,
+		const std::string &mod_origin)
 {
 	jobQueueMutex.lock();
 
@@ -94,6 +96,7 @@ u32 AsyncEngine::queueAsyncJob(std::string &&func, std::string &&params)
 		toAdd.id = jobId;
 		toAdd.function = std::move(func);
 		toAdd.params = std::move(params);
+		toAdd.mod_origin = mod_origin;
 		jobQueue.emplace_back(std::move(toAdd));
 	}
 
@@ -134,6 +137,8 @@ void AsyncEngine::step(lua_State *L)
 	int error_handler = PUSH_ERROR_HANDLER(L);
 	lua_getglobal(L, "core");
 
+	ScriptApiBase *script = ModApiBase::getScriptApiBase(L);
+
 	MutexAutoLock autolock(resultQueueMutex);
 	while (!resultQueue.empty()) {
 		LuaJobInfo jobDone = std::move(resultQueue.front());
@@ -147,7 +152,13 @@ void AsyncEngine::step(lua_State *L)
 		lua_pushinteger(L, jobDone.id);
 		lua_pushlstring(L, jobDone.result.data(), jobDone.result.size());
 
-		PCALL_RESL(L, lua_pcall(L, 2, 0, error_handler));
+		// Call handler
+		const char *origin = jobDone.mod_origin.empty() ? nullptr :
+			jobDone.mod_origin.c_str();
+		script->setOriginDirect(origin);
+		int result = lua_pcall(L, 2, 0, error_handler);
+		if (result)
+			script_error(L, result, origin, "<async>");
 	}
 
 	lua_pop(L, 2); // Pop core and error handler
@@ -231,10 +242,10 @@ void* AsyncWorkerThread::run()
 			errorstream << "ASYNC WORKER: Unable to deserialize function" << std::endl;
 			lua_pushnil(L);
 		}
-
 		lua_pushlstring(L, j.params.data(), j.params.size());
 
 		// Call it
+		setOriginDirect(j.mod_origin.empty() ? nullptr : j.mod_origin.c_str());
 		int result = lua_pcall(L, 2, 1, error_handler);
 		if (result) {
 			try {
