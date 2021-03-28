@@ -496,7 +496,7 @@ bool ScriptApiSecurity::checkPath(lua_State *L, const char *path,
 	if (!removed.empty())
 		abs_path += DIR_DELIM + removed;
 
-	// Get server from registry
+	// Get gamedef from registry
 	lua_rawgeti(L, LUA_REGISTRYINDEX, CUSTOM_RIDX_SCRIPTAPI);
 	ScriptApiBase *script;
 #if INDIRECT_SCRIPTAPI_RIDX

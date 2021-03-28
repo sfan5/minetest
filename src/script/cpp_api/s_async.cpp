@@ -169,11 +169,18 @@ void AsyncEngine::prepareEnvironment(lua_State* L, int top)
 /******************************************************************************/
 AsyncWorkerThread::AsyncWorkerThread(AsyncEngine* jobDispatcher,
 		const std::string &name) :
-	Thread(name),
 	ScriptApiBase(ScriptingType::Async),
+	Thread(name),
 	jobDispatcher(jobDispatcher)
 {
 	lua_State *L = getStack();
+
+	if (jobDispatcher->server) {
+		setGameDef(jobDispatcher->server);
+
+		if (g_settings->getBool("secure.enable_security"))
+			initializeSecurity();
+	}
 
 	// Prepare job lua environment
 	lua_getglobal(L, "core");
@@ -197,9 +204,9 @@ void* AsyncWorkerThread::run()
 {
 	lua_State *L = getStack();
 
-	std::string script = getServer()->getBuiltinLuaPath() + DIR_DELIM + "init.lua";
 	try {
-		loadScript(script);
+		loadMod(getServer()->getBuiltinLuaPath() + DIR_DELIM + "init.lua",
+			BUILTIN_MOD_NAME);
 	} catch (const ModError &e) {
 		errorstream << "Execution of async base environment failed: "
 			<< e.what() << std::endl;

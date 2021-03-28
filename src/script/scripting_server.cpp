@@ -51,7 +51,8 @@ extern "C" {
 }
 
 ServerScripting::ServerScripting(Server* server):
-		ScriptApiBase(ScriptingType::Server)
+		ScriptApiBase(ScriptingType::Server),
+		asyncEngine(server)
 {
 	setGameDef(server);
 
@@ -86,6 +87,12 @@ ServerScripting::ServerScripting(Server* server):
 	lua_setglobal(L, "INIT");
 
 	infostream << "SCRIPTAPI: Initialized game modules" << std::endl;
+
+	// Initialize async environment
+	asyncEngine.registerStateInitializer(InitializeAsync);
+	asyncEngine.registerStateInitializer(ModApiUtil::InitializeAsync);
+
+	asyncEngine.initialize(1);
 }
 
 void ServerScripting::stepAsync()
@@ -135,12 +142,6 @@ void ServerScripting::InitializeModApi(lua_State *L, int top)
 	ModApiHttp::Initialize(L, top);
 	ModApiStorage::Initialize(L, top);
 	ModApiChannels::Initialize(L, top);
-
-	// Initialize async environment
-	asyncEngine.registerStateInitializer(InitializeAsync);
-	asyncEngine.registerStateInitializer(ModApiUtil::InitializeAsync);
-
-	asyncEngine.initialize(1);
 }
 
 void ServerScripting::InitializeAsync(lua_State *L, int top)
