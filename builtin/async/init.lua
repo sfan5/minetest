@@ -1,7 +1,7 @@
 
 if core.get_cache_path == nil then -- TODO
 
-core.log("action", "Initializing Asynchronous environment for game")
+core.log("info", "Initializing Asynchronous environment for game")
 
 function core.job_processor(func, serialized_params)
 	local params = core.deserialize(serialized_params)
