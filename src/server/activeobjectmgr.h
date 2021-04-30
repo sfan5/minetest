@@ -24,6 +24,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "../activeobjectmgr.h"
 #include "serveractiveobject.h"
 
+namespace server
+{
 class SpatialHelper {
 public:
 	virtual ~SpatialHelper() = default;
@@ -41,8 +43,6 @@ public:
 			std::function<bool(ServerActiveObject *obj)> include_obj_cb) = 0;
 };
 
-namespace server
-{
 class ActiveObjectMgr : public ::ActiveObjectMgr<ServerActiveObject>
 {
 public:
