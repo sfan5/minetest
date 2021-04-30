@@ -24,11 +24,31 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "../activeobjectmgr.h"
 #include "serveractiveobject.h"
 
+class SpatialHelper {
+public:
+	virtual ~SpatialHelper() = default;
+
+	virtual void add(const ServerActiveObject *obj) = 0;
+	virtual void remove(const ServerActiveObject *obj) = 0;
+	// Called when object might have changed position
+	virtual void update(const ServerActiveObject *obj) = 0;
+
+	virtual void getInsideRadius(const v3f &pos, float radius,
+			std::vector<ServerActiveObject *> &result,
+			std::function<bool(ServerActiveObject *obj)> include_obj_cb) = 0;
+	virtual void getInArea(const aabb3f &box,
+			std::vector<ServerActiveObject *> &result,
+			std::function<bool(ServerActiveObject *obj)> include_obj_cb) = 0;
+};
+
 namespace server
 {
 class ActiveObjectMgr : public ::ActiveObjectMgr<ServerActiveObject>
 {
 public:
+	ActiveObjectMgr();
+	~ActiveObjectMgr();
+
 	void clear(const std::function<bool(ServerActiveObject *, u16)> &cb);
 	void step(const std::function<void(ServerActiveObject *)> &f) override;
 	bool addObject(ServerActiveObject *obj) override;
@@ -44,5 +64,8 @@ public:
 	void getAddedActiveObjectsAroundPos(const v3f &player_pos, f32 radius,
 			f32 player_radius, std::set<u16> &current_objects,
 			std::queue<u16> &added_objects);
+
+protected:
+	SpatialHelper *helper = nullptr;
 };
 } // namespace server
