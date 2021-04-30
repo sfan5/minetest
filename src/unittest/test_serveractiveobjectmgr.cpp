@@ -87,7 +87,7 @@ void TestServerActiveObjectMgr::testFreeID()
 	for (u8 i = 0; i < UINT8_MAX; i++) {
 		// Register an object
 		auto tsao = new TestServerActiveObject();
-		saomgr.registerObject(tsao);
+		saomgr.addObject(tsao);
 		aoids.push_back(tsao->getId());
 
 		// Ensure next id is not in registered list
@@ -102,7 +102,7 @@ void TestServerActiveObjectMgr::testRegisterObject()
 {
 	server::ActiveObjectMgr saomgr;
 	auto tsao = new TestServerActiveObject();
-	UASSERT(saomgr.registerObject(tsao));
+	UASSERT(saomgr.addObject(tsao));
 
 	u16 id = tsao->getId();
 
@@ -111,7 +111,7 @@ void TestServerActiveObjectMgr::testRegisterObject()
 	UASSERT(tsaoToCompare == tsao);
 
 	tsao = new TestServerActiveObject();
-	UASSERT(saomgr.registerObject(tsao));
+	UASSERT(saomgr.addObject(tsao));
 	UASSERT(saomgr.getActiveObject(tsao->getId()) == tsao);
 	UASSERT(saomgr.getActiveObject(tsao->getId()) != tsaoToCompare);
 
@@ -122,7 +122,7 @@ void TestServerActiveObjectMgr::testRemoveObject()
 {
 	server::ActiveObjectMgr saomgr;
 	auto tsao = new TestServerActiveObject();
-	UASSERT(saomgr.registerObject(tsao));
+	UASSERT(saomgr.addObject(tsao));
 
 	u16 id = tsao->getId();
 	UASSERT(saomgr.getActiveObject(id) != nullptr)
@@ -144,9 +144,8 @@ void TestServerActiveObjectMgr::testGetObjectsInsideRadius()
 			v3f(1500, -740, -304),
 	};
 
-	for (const auto &p : sao_pos) {
-		saomgr.registerObject(new TestServerActiveObject(p));
-	}
+	for (const auto &p : sao_pos)
+		saomgr.addObject(new TestServerActiveObject(p));
 
 	std::vector<ServerActiveObject *> result;
 	saomgr.getObjectsInsideRadius(v3f(), 50, result, nullptr);
@@ -182,9 +181,8 @@ void TestServerActiveObjectMgr::testGetAddedActiveObjectsAroundPos()
 			v3f(1500, -740, -304),
 	};
 
-	for (const auto &p : sao_pos) {
-		saomgr.registerObject(new TestServerActiveObject(p));
-	}
+	for (const auto &p : sao_pos)
+		saomgr.addObject(new TestServerActiveObject(p));
 
 	std::queue<u16> result;
 	std::set<u16> cur_objects;

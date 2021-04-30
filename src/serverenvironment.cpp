@@ -1498,7 +1498,8 @@ void ServerEnvironment::step(float dtime)
 			// Read messages from object
 			obj->dumpAOMessagesToQueue(m_active_object_messages);
 		};
-		m_ao_manager.step(dtime, cb_state);
+
+		m_ao_manager.step(cb_state);
 	}
 
 	/*
@@ -1731,7 +1732,7 @@ void ServerEnvironment::getSelectedActiveObjects(
 u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 	bool set_changed, u32 dtime_s)
 {
-	if (!m_ao_manager.registerObject(object)) {
+	if (!m_ao_manager.addObject(object)) {
 		return 0;
 	}
 

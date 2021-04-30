@@ -70,7 +70,7 @@ void TestClientActiveObjectMgr::testFreeID()
 	for (u8 i = 0; i < UINT8_MAX; i++) {
 		// Register an object
 		auto tcao = new TestClientActiveObject();
-		caomgr.registerObject(tcao);
+		caomgr.addObject(tcao);
 		aoids.push_back(tcao->getId());
 
 		// Ensure next id is not in registered list
@@ -85,7 +85,7 @@ void TestClientActiveObjectMgr::testRegisterObject()
 {
 	client::ActiveObjectMgr caomgr;
 	auto tcao = new TestClientActiveObject();
-	UASSERT(caomgr.registerObject(tcao));
+	UASSERT(caomgr.addObject(tcao));
 
 	u16 id = tcao->getId();
 
@@ -94,7 +94,7 @@ void TestClientActiveObjectMgr::testRegisterObject()
 	UASSERT(tcaoToCompare == tcao);
 
 	tcao = new TestClientActiveObject();
-	UASSERT(caomgr.registerObject(tcao));
+	UASSERT(caomgr.addObject(tcao));
 	UASSERT(caomgr.getActiveObject(tcao->getId()) == tcao);
 	UASSERT(caomgr.getActiveObject(tcao->getId()) != tcaoToCompare);
 
@@ -105,7 +105,7 @@ void TestClientActiveObjectMgr::testRemoveObject()
 {
 	client::ActiveObjectMgr caomgr;
 	auto tcao = new TestClientActiveObject();
-	UASSERT(caomgr.registerObject(tcao));
+	UASSERT(caomgr.addObject(tcao));
 
 	u16 id = tcao->getId();
 	UASSERT(caomgr.getActiveObject(id) != nullptr)

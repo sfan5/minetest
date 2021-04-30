@@ -32,8 +32,8 @@ class ActiveObjectMgr
 	friend class ::TestServerActiveObjectMgr;
 
 public:
-	virtual void step(float dtime, const std::function<void(T *)> &f) = 0;
-	virtual bool registerObject(T *obj) = 0;
+	virtual void step(const std::function<void(T *)> &f) = 0;
+	virtual bool addObject(T *obj) = 0;
 	virtual void removeObject(u16 id) = 0;
 
 	T *getActiveObject(u16 id)

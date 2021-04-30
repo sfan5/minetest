@@ -35,8 +35,7 @@ void ActiveObjectMgr::clear()
 	m_active_objects.clear();
 }
 
-void ActiveObjectMgr::step(
-		float dtime, const std::function<void(ClientActiveObject *)> &f)
+void ActiveObjectMgr::step(const std::function<void(ClientActiveObject *)> &f)
 {
 	g_profiler->avg("ActiveObjectMgr: CAO count [#]", m_active_objects.size());
 	for (auto &ao_it : m_active_objects) {
@@ -44,14 +43,13 @@ void ActiveObjectMgr::step(
 	}
 }
 
-// clang-format off
-bool ActiveObjectMgr::registerObject(ClientActiveObject *obj)
+bool ActiveObjectMgr::addObject(ClientActiveObject *obj)
 {
 	assert(obj); // Pre-condition
 	if (obj->getId() == 0) {
 		u16 new_id = getFreeId();
 		if (new_id == 0) {
-			infostream << "Client::ActiveObjectMgr::registerObject(): "
+			infostream << "Client::ActiveObjectMgr::addObject(): "
 					<< "no free id available" << std::endl;
 
 			delete obj;
@@ -61,12 +59,12 @@ bool ActiveObjectMgr::registerObject(ClientActiveObject *obj)
 	}
 
 	if (!isFreeId(obj->getId())) {
-		infostream << "Client::ActiveObjectMgr::registerObject(): "
+		infostream << "Client::ActiveObjectMgr::addObject(): "
 				<< "id is not free (" << obj->getId() << ")" << std::endl;
 		delete obj;
 		return false;
 	}
-	infostream << "Client::ActiveObjectMgr::registerObject(): "
+	infostream << "Client::ActiveObjectMgr::addObject(): "
 			<< "added (id=" << obj->getId() << ")" << std::endl;
 	m_active_objects[obj->getId()] = obj;
 	return true;
@@ -89,7 +87,6 @@ void ActiveObjectMgr::removeObject(u16 id)
 	delete obj;
 }
 
-// clang-format on
 void ActiveObjectMgr::getActiveObjects(const v3f &origin, f32 max_d,
 		std::vector<DistanceSortedActiveObject> &dest)
 {
