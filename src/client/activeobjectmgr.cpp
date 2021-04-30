@@ -17,12 +17,43 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#include <log.h>
+#undef NDEBUG
+
+#include "log.h"
 #include "profiler.h"
 #include "activeobjectmgr.h"
+#include "config.h"
+#if USE_SPATIAL
+	#include <spatialindex/SpatialIndex.h>
+#endif
 
 namespace client
 {
+
+/*** SpatialImpl ***/
+
+#if USE_SPATIAL
+
+#define AO_TYPE ClientActiveObject
+#define getBasePosition getPosition // hmm yes
+#include "../spatialimpl.h"
+
+#endif
+
+/*** ActiveObjectMgr ***/
+
+ActiveObjectMgr::ActiveObjectMgr()
+{
+#if USE_SPATIAL
+	verbosestream << "ActiveObjectMgr: using SpatialIndex to speed up queries" << std::endl;
+	helper = new SpatialImpl();
+#endif
+}
+
+ActiveObjectMgr::~ActiveObjectMgr()
+{
+	delete helper;
+}
 
 void ActiveObjectMgr::clear()
 {
@@ -33,6 +64,13 @@ void ActiveObjectMgr::clear()
 		active_object.second = nullptr;
 	}
 	m_active_objects.clear();
+
+#if USE_SPATIAL
+	if (helper) {
+		delete helper;
+		helper = new SpatialImpl();
+	}
+#endif
 }
 
 void ActiveObjectMgr::step(const std::function<void(ClientActiveObject *)> &f)
@@ -40,6 +78,8 @@ void ActiveObjectMgr::step(const std::function<void(ClientActiveObject *)> &f)
 	g_profiler->avg("ActiveObjectMgr: CAO count [#]", m_active_objects.size());
 	for (auto &ao_it : m_active_objects) {
 		f(ao_it.second);
+		if (helper) // TODO: probably incomplete here too
+			helper->update(ao_it.second);
 	}
 }
 
@@ -66,7 +106,11 @@ bool ActiveObjectMgr::addObject(ClientActiveObject *obj)
 	}
 	infostream << "Client::ActiveObjectMgr::addObject(): "
 			<< "added (id=" << obj->getId() << ")" << std::endl;
+
 	m_active_objects[obj->getId()] = obj;
+	if (helper)
+		helper->add(obj);
+
 	return true;
 }
 
@@ -82,14 +126,23 @@ void ActiveObjectMgr::removeObject(u16 id)
 	}
 
 	m_active_objects.erase(id);
+	if (helper)
+		helper->remove(obj);
 
 	obj->removeFromScene(true);
 	delete obj;
 }
 
 void ActiveObjectMgr::getActiveObjects(const v3f &origin, f32 max_d,
-		std::vector<DistanceSortedActiveObject> &dest)
+		std::vector<ClientActiveObject *> &dest)
 {
+	if (helper) {
+		const auto cb = [] (ClientActiveObject *obj) -> bool {
+			return true;
+		};
+		return helper->getInsideRadius(origin, max_d, dest, cb);
+	}
+
 	f32 max_d2 = max_d * max_d;
 	for (auto &ao_it : m_active_objects) {
 		ClientActiveObject *obj = ao_it.second;
@@ -99,7 +152,7 @@ void ActiveObjectMgr::getActiveObjects(const v3f &origin, f32 max_d,
 		if (d2 > max_d2)
 			continue;
 
-		dest.emplace_back(obj, d2);
+		dest.emplace_back(obj);
 	}
 }
 

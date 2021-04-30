@@ -26,15 +26,38 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 namespace client
 {
+class SpatialHelper {
+public:
+	virtual ~SpatialHelper() = default;
+
+	virtual void add(const ClientActiveObject *obj) = 0;
+	virtual void remove(const ClientActiveObject *obj) = 0;
+	// Called when object might have changed position
+	virtual void update(const ClientActiveObject *obj) = 0;
+
+	virtual void getInsideRadius(const v3f &pos, float radius,
+			std::vector<ClientActiveObject *> &result,
+			std::function<bool(ClientActiveObject *obj)> include_obj_cb) = 0;
+	virtual void getInArea(const aabb3f &box,
+			std::vector<ClientActiveObject *> &result,
+			std::function<bool(ClientActiveObject *obj)> include_obj_cb) = 0;
+};
+
 class ActiveObjectMgr : public ::ActiveObjectMgr<ClientActiveObject>
 {
 public:
+	ActiveObjectMgr();
+	~ActiveObjectMgr();
+
 	void clear();
 	void step(const std::function<void(ClientActiveObject *)> &f) override;
 	bool addObject(ClientActiveObject *obj) override;
 	void removeObject(u16 id) override;
 
 	void getActiveObjects(const v3f &origin, f32 max_d,
-			std::vector<DistanceSortedActiveObject> &dest);
+			std::vector<ClientActiveObject *> &dest);
+
+protected:
+	SpatialHelper *helper = nullptr;
 };
 } // namespace client

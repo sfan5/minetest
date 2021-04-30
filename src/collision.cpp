@@ -373,14 +373,13 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 			// Calculate distance by speed, add own extent and 1.5m of tolerance
 			f32 distance = speed_f->getLength() * dtime +
 				box_0.getExtent().getLength() + 1.5f * BS;
-			std::vector<DistanceSortedActiveObject> clientobjects;
+			std::vector<ClientActiveObject*> clientobjects;
 			c_env->getActiveObjects(*pos_f, distance, clientobjects);
 
-			for (auto &clientobject : clientobjects) {
+			for (const auto obj : clientobjects) {
 				// Do collide with everything but itself and the parent CAO
-				if (!self || (self != clientobject.obj &&
-						self != clientobject.obj->getParent())) {
-					objects.push_back((ActiveObject*) clientobject.obj);
+				if (!self || (self != obj && self != obj->getParent())) {
+					objects.push_back((ActiveObject*) obj);
 				}
 			}
 		}

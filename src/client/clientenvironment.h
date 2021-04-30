@@ -120,7 +120,7 @@ public:
 
 	// Get all nearby objects
 	void getActiveObjects(const v3f &origin, f32 max_d,
-		std::vector<DistanceSortedActiveObject> &dest)
+		std::vector<ClientActiveObject*> &dest)
 	{
 		return m_ao_manager.getActiveObjects(origin, max_d, dest);
 	}
