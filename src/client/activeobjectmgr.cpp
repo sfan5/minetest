@@ -44,7 +44,7 @@ namespace client
 
 ActiveObjectMgr::ActiveObjectMgr()
 {
-#if USE_SPATIAL
+#if USE_SPATIAL && 0
 	verbosestream << "ActiveObjectMgr: using SpatialIndex to speed up queries" << std::endl;
 	helper = new SpatialImpl();
 #endif

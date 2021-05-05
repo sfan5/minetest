@@ -100,8 +100,8 @@ void SpatialImpl::add(const AO_TYPE *obj)
 void SpatialImpl::remove(const AO_TYPE *obj)
 {
 	auto it = pos_cache.find(obj);
-	if (it != pos_cache.end())
-		pos_cache.erase(it);
+	assert(it != pos_cache.end());
+	pos_cache.erase(it);
 
 	bool ok = m_tree->deleteData(
 		spatial_point(obj->getBasePosition()), CAST_OBJ(obj));
@@ -135,8 +135,6 @@ void SpatialImpl::update(const AO_TYPE *obj)
 		assert(ok);
 	}
 	add(obj);
-
-	it->second = obj->getBasePosition();
 }
 
 void SpatialImpl::getInsideRadius(const v3f &pos, float radius,
@@ -150,8 +148,7 @@ void SpatialImpl::getInsideRadius(const v3f &pos, float radius,
 			return false;
 		return !include_obj_cb || include_obj_cb(obj);
 	};
-	v3f r(radius, radius, radius);
-	getInArea(aabb3f(pos - r, pos + r), result, cb);
+	getInArea(aabb3f(pos - v3f(radius), pos + v3f(radius)), result, cb);
 }
 
 void SpatialImpl::getInArea(const aabb3f &box,
