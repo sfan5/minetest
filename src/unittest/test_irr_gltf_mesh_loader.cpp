@@ -1,6 +1,8 @@
 // Minetest
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
+#include "IAnimatedMesh.h"
+#include "ISceneManager.h"
 #include "content/subgames.h"
 #include "filesys.h"
 
@@ -8,6 +10,7 @@
 #include "irr_v2d.h"
 
 #include <irrlicht.h>
+#include <memory>
 
 #include "catch.h"
 
@@ -24,13 +27,13 @@ auto *driver = irr::createDeviceEx(p);
 REQUIRE(driver);
 
 auto *smgr = driver->getSceneManager();
-// FIXME: this leaks because we don't drop()
 const auto loadMesh = [&] (const io::path& filepath) {
 	auto *file = driver->getFileSystem()->createAndOpenFile(filepath);
 	REQUIRE(file);
 	auto *ret = smgr->getMesh(file);
 	file->drop();
-	return ret;
+	return std::unique_ptr<scene::IAnimatedMesh, void (*)(scene::IAnimatedMesh*)>(
+			ret, [](auto *mesh) { mesh->drop(); });
 };
 
 const static auto model_stem = gamespec.gamemods_path +
