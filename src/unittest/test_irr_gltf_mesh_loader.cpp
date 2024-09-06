@@ -1,11 +1,9 @@
 // Minetest
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
-#include "CSceneManager.h"
 #include "content/subgames.h"
 #include "filesys.h"
 
-#include "CReadFile.h"
 #include "irr_v3d.h"
 #include "irr_v2d.h"
 
@@ -20,10 +18,19 @@ const auto gamespec = findSubgame("devtest");
 if (!gamespec.isValid())
 	SKIP();
 
-irr::scene::CSceneManager smgr(nullptr, nullptr, nullptr);
-const auto loadMesh = [&smgr](const irr::io::path& filepath) {
-	irr::io::CReadFile file(filepath);
-	return smgr.getMesh(&file);
+irr::SIrrlichtCreationParameters p;
+p.DriverType = video::EDT_NULL;
+auto *driver = irr::createDeviceEx(p);
+REQUIRE(driver);
+
+auto *smgr = driver->getSceneManager();
+// FIXME: this leaks because we don't drop()
+const auto loadMesh = [&] (const io::path& filepath) {
+	auto *file = driver->getFileSystem()->createAndOpenFile(filepath);
+	REQUIRE(file);
+	auto *ret = smgr->getMesh(file);
+	file->drop();
+	return ret;
 };
 
 const static auto model_stem = gamespec.gamemods_path +
@@ -37,7 +44,7 @@ SECTION("error cases") {
 	}
 
 	SECTION("null file pointer") {
-		CHECK(smgr.getMesh(nullptr) == nullptr);
+		CHECK(smgr->getMesh(nullptr) == nullptr);
 	}
 
 	SECTION("invalid JSON") {
