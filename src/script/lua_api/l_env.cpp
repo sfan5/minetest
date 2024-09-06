@@ -43,7 +43,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "server/player_sao.h"
 #include "util/string.h"
 #include "translation.h"
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 #include "client/client.h"
 #endif
 
@@ -158,7 +158,7 @@ int LuaRaycast::l_next(lua_State *L)
 	ServerEnvironment *senv = dynamic_cast<ServerEnvironment*>(env);
 
 	bool csm = false;
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 	csm = getClient(L) != nullptr;
 #endif
 
@@ -913,7 +913,7 @@ int ModApiEnv::l_find_node_near(lua_State *L)
 
 	int start_radius = (lua_isboolean(L, 4) && readParam<bool>(L, 4)) ? 0 : 1;
 
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 	// Client API limitations
 	if (Client *client = getClient(L))
 		radius = client->CSMClampRadius(pos, radius);
@@ -1025,7 +1025,7 @@ int ModApiEnv::l_find_nodes_in_area(lua_State *L)
 	const NodeDefManager *ndef = env->getGameDef()->ndef();
 	Map &map = env->getMap();
 
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 	if (Client *client = getClient(L)) {
 		minp = client->CSMClampPos(minp);
 		maxp = client->CSMClampPos(maxp);
@@ -1087,7 +1087,7 @@ int ModApiEnv::l_find_nodes_in_area_under_air(lua_State *L)
 	const NodeDefManager *ndef = env->getGameDef()->ndef();
 	Map &map = env->getMap();
 
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 	if (Client *client = getClient(L)) {
 		minp = client->CSMClampPos(minp);
 		maxp = client->CSMClampPos(maxp);

@@ -31,7 +31,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "client/shadows/dynamicshadowsrender.h"
 #include <IVideoDriver.h>
 
-#ifdef SERVER
+#if CLIENT_BUILD == 0
 #error Do not include in server builds
 #endif
 

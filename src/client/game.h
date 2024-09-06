@@ -22,7 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "irrlichttypes.h"
 #include <string>
 
-#ifdef SERVER
+#if CLIENT_BUILD == 0
 #error Do not include in server builds
 #endif
 

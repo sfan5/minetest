@@ -38,7 +38,7 @@ public:
 				touch_controls == other.touch_controls;
 	}
 
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 	static ClientDynamicInfo getCurrent();
 
 private:

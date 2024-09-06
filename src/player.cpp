@@ -172,7 +172,7 @@ u16 Player::getMaxHotbarItemcount()
 	return mainlist ? std::min(mainlist->getSize(), (u32) hud_hotbar_itemcount) : 0;
 }
 
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 
 u32 PlayerControl::getKeysPressed() const
 {

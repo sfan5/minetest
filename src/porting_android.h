@@ -97,7 +97,7 @@ int getInputDialogSelection();
 
 bool hasPhysicalKeyboardAndroid();
 
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 float getDisplayDensity();
 v2u32 getDisplaySize();
 #endif

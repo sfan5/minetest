@@ -23,7 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <unordered_map>
 
 
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 // Client translations
 static Translations client_translations;
 Translations *g_client_translations = &client_translations;

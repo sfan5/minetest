@@ -154,7 +154,7 @@ const char *GetFilenameFromPath(const char *path);
 // logs and returns false on error
 bool safeWriteToFile(const std::string &path, std::string_view content);
 
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 bool extractZipFile(irr::io::IFileSystem *fs, const char *filename, const std::string &destination);
 #endif
 

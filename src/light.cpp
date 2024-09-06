@@ -23,7 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 #include "settings.h"
 
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 
 static u8 light_LUT[LIGHT_SUN + 1];
 

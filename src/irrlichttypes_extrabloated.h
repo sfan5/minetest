@@ -21,7 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "irrlichttypes_bloated.h"
 
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 #include <IMesh.h>
 #include <IImage.h>
 #include <IMeshSceneNode.h>

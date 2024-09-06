@@ -36,7 +36,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "script/common/c_types.h" // LuaError
 #include "util/numeric.h"
 
-#ifdef SERVER
+#if CLIENT_BUILD == 0
 #error Do not include in server builds
 #endif
 

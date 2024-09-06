@@ -601,6 +601,8 @@ if(BUILD_CLIENT)
 		# on other platforms, only IrrlichtMt depends on SDL2
 		"$<$<PLATFORM_ID:Android>:${SDL2_LIBRARIES}>"
 	)
+	set_target_properties(${PROJECT_NAME} PROPERTIES
+		COMPILE_DEFINITIONS "CLIENT_BUILD=1")
 	if(NOT USE_LUAJIT)
 		set_target_properties(${PROJECT_NAME} PROPERTIES
 			# This is necessary for dynamic Lua modules
@@ -676,7 +678,7 @@ if(BUILD_SERVER)
 		${PLATFORM_LIBS}
 	)
 	set_target_properties(${PROJECT_NAME}server PROPERTIES
-		COMPILE_DEFINITIONS "SERVER")
+		COMPILE_DEFINITIONS "CLIENT_BUILD=0")
 	if(NOT USE_LUAJIT)
 		set_target_properties(${PROJECT_NAME}server PROPERTIES
 			# This is necessary for dynamic Lua modules

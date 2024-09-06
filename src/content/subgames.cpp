@@ -28,7 +28,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "map_settings_manager.h"
 #include "util/string.h"
 
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 #include "client/texturepaths.h"
 #endif
 
@@ -192,7 +192,7 @@ SubgameSpec findSubgame(const std::string &id)
 	}
 
 	std::string menuicon_path;
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 	menuicon_path = getImagePath(
 			game_path + DIR_DELIM + "menu" + DIR_DELIM + "icon.png");
 #endif

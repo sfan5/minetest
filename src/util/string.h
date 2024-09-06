@@ -20,7 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #pragma once
 
 #include "irrlichttypes_bloated.h"
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 #include "irrString.h"
 #endif
 #include <cstdlib>
@@ -733,7 +733,7 @@ inline std::string str_join(const std::vector<std::string> &list,
 	return oss.str();
 }
 
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 /**
  * Create a UTF8 std::string from an irr::core::stringw.
  */

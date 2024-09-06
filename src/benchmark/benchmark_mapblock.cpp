@@ -49,7 +49,7 @@ static inline void freeAll(MBContainer &vec) { freeSome(vec, vec.size()); }
 static void workOnMetadata(const MBContainer &vec)
 {
 	for (MapBlock *block : vec) {
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 		bool foo = !!block->mesh;
 #else
 		bool foo = true;

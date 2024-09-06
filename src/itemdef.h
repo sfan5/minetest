@@ -35,7 +35,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 class IGameDef;
 class Client;
 struct ToolCapabilities;
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 #include "client/texturesource.h"
 struct ItemMesh;
 struct ItemStack;
@@ -154,7 +154,7 @@ public:
 	virtual void getAll(std::set<std::string> &result) const=0;
 	// Check if item is known
 	virtual bool isKnown(const std::string &name) const=0;
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 	// Get item inventory texture
 	virtual video::ITexture* getInventoryTexture(const ItemStack &item, Client *client) const=0;
 

@@ -23,7 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 
 class Translations;
-#ifndef SERVER
+#if CLIENT_BUILD == 1
 extern Translations *g_client_translations;
 #endif
 
