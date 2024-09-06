@@ -65,6 +65,10 @@ enum ModReason : u32 {
 	MOD_REASON_UNKNOWN                    = 1 << 18,
 };
 
+#if !defined(CLIENT_BUILD)
+#error unsafe
+#endif
+
 ////
 //// MapBlock itself
 ////
