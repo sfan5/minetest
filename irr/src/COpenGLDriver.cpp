@@ -1448,6 +1448,7 @@ void COpenGLDriver::draw2DImageBatch(const video::ITexture *texture,
 void COpenGLDriver::draw2DRectangle(SColor color, const core::rect<s32> &position,
 		const core::rect<s32> *clip)
 {
+#if 0
 	disableTextures();
 	setRenderStates2DMode(color.getAlpha() < 255, false, false);
 
@@ -1462,6 +1463,8 @@ void COpenGLDriver::draw2DRectangle(SColor color, const core::rect<s32> &positio
 	glColor4ub(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
 	glRectf(GLfloat(pos.UpperLeftCorner.X), GLfloat(pos.UpperLeftCorner.Y),
 			GLfloat(pos.LowerRightCorner.X), GLfloat(pos.LowerRightCorner.Y));
+#endif
+	draw2DRectangle(position, color, color, color, color, clip);
 }
 
 //! draw an 2d rectangle
@@ -1477,6 +1480,27 @@ void COpenGLDriver::draw2DRectangle(const core::rect<s32> &position,
 	if (!pos.isValid())
 		return;
 
+	video::S3DVertex vertices[4];
+
+	const bool anyAlpha = colorLeftUp.getAlpha() < 255 ||
+		colorRightUp.getAlpha() < 255 || colorLeftDown.getAlpha() < 255 ||
+		colorRightDown.getAlpha() < 255;
+	vertices[0].Color = colorLeftUp;
+	vertices[1].Color = colorRightUp;
+	vertices[2].Color = colorRightDown;
+	vertices[3].Color = colorLeftDown;
+
+	vertices[0].Pos = core::vector3df((f32)pos.UpperLeftCorner.X, (f32)pos.UpperLeftCorner.Y, 0.0f);
+	vertices[1].Pos = core::vector3df((f32)pos.LowerRightCorner.X, (f32)pos.UpperLeftCorner.Y, 0.0f);
+	vertices[2].Pos = core::vector3df((f32)pos.LowerRightCorner.X, (f32)pos.LowerRightCorner.Y, 0.0f);
+	vertices[3].Pos = core::vector3df((f32)pos.UpperLeftCorner.X, (f32)pos.LowerRightCorner.Y, 0.0f);
+
+	Material.setTexture(0, nullptr);
+	Material.MaterialType = anyAlpha ? EMT_TRANSPARENT_VERTEX_ALPHA : EMT_SOLID;
+
+	draw2DVertexPrimitiveList(vertices, 4, Quad2DIndices, 4, EVT_STANDARD, scene::EPT_TRIANGLE_FAN, EIT_16BIT);
+
+	if (0) {
 	disableTextures();
 
 	setRenderStates2DMode(colorLeftUp.getAlpha() < 255 ||
@@ -1515,12 +1539,27 @@ void COpenGLDriver::draw2DRectangle(const core::rect<s32> &position,
 	}
 
 	glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_SHORT, Quad2DIndices);
+	}
 }
 
 //! Draws a 2d line.
 void COpenGLDriver::draw2DLine(const core::position2d<s32> &start,
 		const core::position2d<s32> &end, SColor color)
 {
+	video::S3DVertex vertices[2];
+
+	vertices[0].Color = color;
+	vertices[1].Color = color;
+
+	vertices[0].Pos = core::vector3df((f32)start.X, (f32)start.Y, 0);
+	vertices[1].Pos = core::vector3df((f32)end.X, (f32)end.Y, 0);
+
+	Material.setTexture(0, nullptr);
+	Material.MaterialType = color.getAlpha() < 255 ? EMT_TRANSPARENT_VERTEX_ALPHA : EMT_SOLID;
+
+	draw2DVertexPrimitiveList(vertices, 2, Quad2DIndices, 2, EVT_STANDARD, scene::EPT_LINES, EIT_16BIT);
+
+	if (0)
 	{
 		disableTextures();
 		setRenderStates2DMode(color.getAlpha() < 255, false, false);
