@@ -23,8 +23,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "config.h" // IS_CLIENT_BUILD
 #if IS_CLIENT_BUILD
 #include "irrString.h"
-#include "translation.h"
 #endif
+#include "translation.h"
 #include <cstdlib>
 #include <string>
 #include <string_view>
@@ -659,11 +659,7 @@ std::wstring translate_string(std::wstring_view s, Translations *translations);
 
 inline std::wstring translate_string(std::wstring_view s)
 {
-#if IS_CLIENT_BUILD
 	return translate_string(s, g_client_translations);
-#else
-	return translate_string(s, nullptr);
-#endif
 }
 
 inline std::wstring unescape_translate(std::wstring_view s)
