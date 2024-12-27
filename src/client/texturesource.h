@@ -56,6 +56,34 @@ public:
 	virtual bool isKnownSourceImage(const std::string &name)=0;
 	virtual video::ITexture* getNormalTexture(const std::string &name)=0;
 	virtual video::SColor getTextureAverageColor(const std::string &name)=0;
+
+	/**
+	 * Checks if a texture contains any semi-transparent pixels. This is meant
+	 * to be used to detect stuff that has semi-transparency enabled but does
+	 * not need it.
+	 * @param name texture name
+	 * @return true if yes/unknown, false if no
+	 */
+	virtual bool checkSemiTransparent(const std::string &name) { return true; }
+
+	/// @brief Checks that a set contains ZERO semi-transparent textures.
+	template <typename C>
+	inline bool checkNoneSemiTransparent(const C &set)
+	{
+		for (auto &name : set) {
+			if (checkSemiTransparent(name))
+				return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Complains about semi-transparency being used unnecessarily for this texture
+	 * (just once).
+	 * @param name texture name
+	 * @param context usage context, for the warning message
+	 */
+	virtual void complainSemiTransparent(const std::string &name, const std::string &context = "") {}
 };
 
 class IWritableTextureSource : public ITextureSource

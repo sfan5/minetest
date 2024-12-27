@@ -1329,19 +1329,24 @@ void GenericCAO::updateTextures(std::string mod)
 
 	else if (m_animated_meshnode) {
 		if (m_prop.visual == "mesh") {
+			std::set<std::string> set1;
+			bool skipped = false;
 			for (u32 i = 0; i < m_animated_meshnode->getMaterialCount(); ++i) {
 				const auto texture_idx = m_animated_meshnode->getMesh()->getTextureSlot(i);
 				if (texture_idx >= m_prop.textures.size())
 					continue;
 				std::string texturestring = m_prop.textures[texture_idx];
-				if (texturestring.empty())
+				if (texturestring.empty()) {
+					skipped = true;
 					continue; // Empty texture string means don't modify that material
+				}
 				texturestring += mod;
 				video::ITexture *texture = tsrc->getTextureForMesh(texturestring);
 				if (!texture) {
 					errorstream<<"GenericCAO::updateTextures(): Could not load texture "<<texturestring<<std::endl;
 					continue;
 				}
+				set1.insert(texturestring);
 
 				// Set material flags and texture
 				video::SMaterial &material = m_animated_meshnode->getMaterial(i);
@@ -1361,6 +1366,13 @@ void GenericCAO::updateTextures(std::string mod)
 					setMaterialFilters(tex, use_bilinear_filter, use_trilinear_filter,
 							use_anisotropic_filter);
 				});
+			}
+
+			if (m_prop.use_texture_alpha && !skipped && !set1.empty()) {
+				if (tsrc->checkNoneSemiTransparent(set1)) {
+					tsrc->complainSemiTransparent(*set1.begin(), "CAO");
+					m_prop.use_texture_alpha = false; // not sure if actually works
+				}
 			}
 		}
 	}

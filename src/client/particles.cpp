@@ -773,6 +773,13 @@ void ParticleManager::clearAll()
 void ParticleManager::handleParticleEvent(ClientEvent *event, Client *client,
 	LocalPlayer *player)
 {
+	auto *tsrc = client->tsrc();
+	const auto &do_check = [&] (const ServerParticleTexture &tex) {
+		if (tex.blendmode != BlendMode::clip &&
+				!tsrc->checkSemiTransparent(tex.string))
+			tsrc->complainSemiTransparent(tex.string, "particle");
+	};
+
 	switch (event->type) {
 		case CE_DELETE_PARTICLESPAWNER: {
 			deleteParticleSpawner(event->delete_particlespawner.id);
@@ -787,14 +794,15 @@ void ParticleManager::handleParticleEvent(ClientEvent *event, Client *client,
 			// texture pool
 			std::vector<ClientParticleTexture> texpool;
 			if (!p.texpool.empty()) {
-				size_t txpsz = p.texpool.size();
-				texpool.reserve(txpsz);
-				for (size_t i = 0; i < txpsz; ++i) {
-					texpool.emplace_back(p.texpool[i], client->tsrc());
+				texpool.reserve(p.texpool.size());
+				for (auto &tex : p.texpool) {
+					texpool.emplace_back(tex, tsrc);
+					do_check(tex);
 				}
 			} else {
 				// no texpool in use, use fallback texture
-				texpool.emplace_back(p.texture, client->tsrc());
+				texpool.emplace_back(p.texture, tsrc);
+				do_check(p.texture);
 			}
 
 			addParticleSpawner(event->add_particlespawner.id,
@@ -820,15 +828,15 @@ void ParticleManager::handleParticleEvent(ClientEvent *event, Client *client,
 			f32 oldsize = p.size;
 
 			if (p.node.getContent() != CONTENT_IGNORE) {
-				const ContentFeatures &f = m_env->getGameDef()->ndef()->get(p.node);
+				const ContentFeatures &f = client->ndef()->get(p.node);
 				getNodeParticleParams(p.node, f, p, &texture.ref, texpos,
 						texsize, &color, p.node_tile);
 			} else {
 				/* with no particlespawner to own the texture, we need
 				 * to save it on the heap. it will be freed when the
 				 * particle is destroyed */
-				texstore = std::make_unique<ClientParticleTexture>(p.texture, client->tsrc());
-
+				texstore = std::make_unique<ClientParticleTexture>(p.texture, tsrc);
+				do_check(p.texture);
 				texture = ClientParticleTexRef(*texstore);
 				texpos = v2f(0.0f, 0.0f);
 				texsize = v2f(1.0f, 1.0f);

@@ -757,6 +757,14 @@ static bool isWorldAligned(AlignStyle style, WorldAlignMode mode, NodeDrawType d
 	return false;
 }
 
+static void gatherTileTextures(std::set<std::string> &dst, const TileDef *tiles, u32 count)
+{
+	for (u32 j = 0; j < count; j++) {
+		if (!tiles[j].name.empty())
+			dst.insert(tiles[j].name);
+	}
+}
+
 void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
 	scene::IMeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings)
 {
@@ -784,6 +792,16 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 	}
 
 	bool is_liquid = false;
+
+	if (alpha == ALPHAMODE_BLEND) {
+		std::set<std::string> set1;
+		gatherTileTextures(set1, tdef, 6);
+		gatherTileTextures(set1, tdef_overlay, 6);
+		if (!set1.empty() && tsrc->checkNoneSemiTransparent(set1)) {
+			tsrc->complainSemiTransparent(*set1.begin(), std::string("node ") + name);
+			alpha = ALPHAMODE_CLIP;
+		}
+	}
 
 	MaterialType material_type = alpha == ALPHAMODE_OPAQUE ?
 		TILE_MATERIAL_OPAQUE : (alpha == ALPHAMODE_CLIP ? TILE_MATERIAL_BASIC :

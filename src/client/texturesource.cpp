@@ -4,7 +4,8 @@
 
 #include "texturesource.h"
 
-#include <IVideoDriver.h>
+#include <optional>
+#include "IVideoDriver.h"
 #include "guiscalingfilter.h"
 #include "imagefilters.h"
 #include "imagesource.h"
@@ -12,6 +13,7 @@
 #include "settings.h"
 #include "texturepaths.h"
 #include "util/thread.h"
+#include "irr_ptr.h"
 
 
 // Stores internal information about a texture.
@@ -22,6 +24,10 @@ struct TextureInfo
 
 	// Stores source image names which ImageSource::generateImage used.
 	std::set<std::string> sourceImages{};
+
+	// Used as a cache by checkSemiTransparent
+	std::optional<bool> is_semi_transparent = std::nullopt;
+	bool semi_transparency_warned = false;
 };
 
 // TextureSource
@@ -123,6 +129,8 @@ public:
 
 	video::ITexture* getNormalTexture(const std::string &name);
 	video::SColor getTextureAverageColor(const std::string &name);
+	bool checkSemiTransparent(const std::string &name);
+	void complainSemiTransparent(const std::string &name, const std::string &context);
 
 private:
 
@@ -526,4 +534,58 @@ video::SColor TextureSource::getTextureAverageColor(const std::string &name)
 	image->drop();
 
 	return c;
+}
+
+bool TextureSource::checkSemiTransparent(const std::string &name)
+{
+	auto *driver = RenderingEngine::get_video_driver();
+
+	auto &ti = m_textureinfo_cache[getTextureId(name)];
+	if (ti.is_semi_transparent.has_value())
+		return ti.is_semi_transparent.value();
+
+	video::ITexture *texture = ti.texture;
+	if (!texture)
+		return true;
+	if (texture->getColorFormat() != video::ECF_A8R8G8B8) {
+		// (this doesn't happen in practice)
+		verbosestream << FUNCTION_NAME << ": color isn't A8R8G8B8" << std::endl;
+		return true;
+	}
+
+	// Note: this downloads the texture back from the GPU
+	irr_ptr<video::IImage> image{driver->createImage(texture,
+		{0, 0}, texture->getOriginalSize())};
+	if (!image)
+		return true;
+
+	core::dimension2du dim = image->getDimension();
+	u32 *const src_data = reinterpret_cast<u32 *>(image->getData());
+	bool ret = false;
+	for (u16 y = 0; y < dim.Height; y++) {
+		for (u16 x = 0; x < dim.Width; x++) {
+			video::SColor c = src_data[y*dim.Width + x];
+			if (c.getAlpha() != 0 && c.getAlpha() != 255) {
+				ret = true;
+				goto break_loop;
+			}
+		}
+	}
+	break_loop:
+	ti.is_semi_transparent = ret;
+	return ret;
+}
+
+void TextureSource::complainSemiTransparent(const std::string &name, const std::string &context)
+{
+	auto &ti = m_textureinfo_cache[getTextureId(name)];
+	if (ti.semi_transparency_warned)
+		return;
+	warningstream << "Texture \"" << name << "\" has simple transparency, "
+		"but is used as semi-transparent";
+	if (!context.empty())
+		warningstream << " (" << context << ")";
+	warningstream << ". Adjust use_texture_alpha "
+		"for better performance." << std::endl;
+	ti.semi_transparency_warned = true;
 }
