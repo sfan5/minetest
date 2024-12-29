@@ -2025,6 +2025,19 @@ scene::IAnimatedMesh* Client::getMesh(const std::string &filename, bool cache)
 	rfile->drop();
 	if (!mesh)
 		return nullptr;
+	{
+		thread_local std::set<std::string> complained;
+		constexpr u32 warn_on = 2000;
+		u32 n = 0;
+		for (u32 j = 0; j < mesh->getMeshBufferCount(); j++)
+			n += mesh->getMeshBuffer(j)->getPrimitiveCount();
+		if (n > warn_on) {
+			if (complained.count(filename) == 0)
+				warningstream << "Mesh \"" << filename << "\" uses more than "
+					<< warn_on << " tris (" << n << ")" << std::endl;
+			complained.insert(filename);
+		}
+	}
 	mesh->grab();
 	if (!cache)
 		m_rendering_engine->removeMesh(mesh);
